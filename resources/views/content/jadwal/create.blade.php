@@ -1,0 +1,103 @@
+@extends('layouts/contentNavbarLayout')
+
+@section('title', 'Tambah Jadwal Karyawan')
+
+@section('content')
+<div class="container">
+    <h2>Tambah Jadwal Karyawan</h2>
+
+    <!-- Form untuk input jadwal -->
+    <form action="{{ route('jadwal.store') }}" method="POST">
+        @csrf
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex">
+                <input type="date" id="tanggal_mulai" name="tanggal_mulai" value="{{ old('tanggal_mulai', $tanggal_mulai->format('Y-m-d')) }}" class="form-control mr-2" style="width: 200px;">
+                <span class="mx-2">-</span>
+                <input type="date" id="tanggal_akhir" name="tanggal_akhir" value="{{ old('tanggal_akhir', $tanggal_akhir->format('Y-m-d')) }}" class="form-control" style="width: 200px;" readonly>
+            </div>
+        </div>
+
+        <!-- Tabel Jadwal -->
+        <div class="table-responsive">
+            <table class="table mt-3">
+                <thead>
+                    <tr>
+                        <th>Tempat</th>
+                        <th>Shift</th>
+                        @foreach(['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'] as $hari)
+                            <th>{{ $hari }}</th>
+                        @endforeach
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($jadwalList as $tempat => $shifts)
+                        @php
+                            $rowspan = count($shifts); // Hitung jumlah shift untuk tempat ini
+                        @endphp
+                        @foreach ($shifts as $index => $shift)
+                            <tr>
+                                <!-- Merge baris tempat -->
+                                @if ($index === 0)
+                                    <td rowspan="{{ $rowspan }}">{{ $tempat }}</td>
+                                @endif
+                                <td>{{ $shift }}</td>
+                                @foreach (['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'] as $hari)
+                                    <td>
+                                        <!-- Hidden input untuk mengirim data tempat, shift, dan hari -->
+                                        <input type="hidden" name="jadwal[{{ $tempat }}][{{ $shift }}][{{ $hari }}][tempat]" value="{{ $tempat }}">
+                                        <input type="hidden" name="jadwal[{{ $tempat }}][{{ $shift }}][{{ $hari }}][shift]" value="{{ $shift }}">
+                                        <input type="hidden" name="jadwal[{{ $tempat }}][{{ $shift }}][{{ $hari }}][hari]" value="{{ $hari }}">
+
+                                        @if ($tempat === 'Produksi')
+                                            <!-- Dropdown multiple untuk memilih lebih dari satu karyawan -->
+                                            <select name="jadwal[{{ $tempat }}][{{ $shift }}][{{ $hari }}][id_karyawan][]" class="form-control" multiple>
+                                                <option disabled selected>Pilih Karyawan</option>
+                                                @foreach ($karyawanList as $karyawan)
+                                                    <option value="{{ $karyawan['id'] }}">{{ $karyawan['nama'] }}</option>
+                                                @endforeach
+                                            </select>
+                                        @else
+                                            <!-- Dropdown single untuk tempat selain Produksi -->
+                                            <select name="jadwal[{{ $tempat }}][{{ $shift }}][{{ $hari }}][id_karyawan]" class="form-control">
+                                                <option value="" disabled selected>Pilih Karyawan</option>
+                                                @foreach ($karyawanList as $karyawan)
+                                                    <option value="{{ $karyawan['id'] }}">{{ $karyawan['nama'] }}</option>
+                                                @endforeach
+                                            </select>
+                                        @endif
+                                    </td>
+                                @endforeach
+                            </tr>
+                        @endforeach
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tombol Simpan -->
+        <div class="text-center mt-3">
+            <button type="submit" class="btn btn-primary">SIMPAN</button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.getElementById("tanggal_mulai").addEventListener("change", function () {
+    let tglMulai = new Date(this.value);
+
+    // Pastikan tanggal yang dipilih adalah Senin (1 = Senin)
+    if (tglMulai.getDay() !== 1) {
+        alert("Harap pilih tanggal mulai yang merupakan hari Senin.");
+        this.value = ""; // Reset input
+        document.getElementById("tanggal_akhir").value = ""; // Reset tanggal akhir juga
+        return;
+    }
+
+    // Tanggal akhir otomatis menjadi Minggu (6 hari setelah Senin)
+    let tglAkhir = new Date(tglMulai);
+    tglAkhir.setDate(tglAkhir.getDate() + 6);
+    document.getElementById("tanggal_akhir").value = tglAkhir.toISOString().split("T")[0];
+});
+</script>
+
+@endsection
