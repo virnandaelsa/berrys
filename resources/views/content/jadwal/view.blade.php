@@ -7,8 +7,11 @@
     <h2>📅 Jadwal Karyawan</h2>
     <div class="d-flex justify-content-between">
         <div>
-            <a href="{{ route('jadwal.create') }}" class="btn btn-primary">+ Tambah</a>
-            <a href="{{ route('jadwal.edit', ['tanggal_mulai' => $tanggal_mulai->toDateString()]) }}" class="btn btn-secondary">✎ Edit</a>
+            <a href="{{ route('jadwal.create') }}"
+            class="btn btn-primary">+ Tambah</a>
+
+            <a href="{{ route('jadwal.edit', ['tanggal_mulai' => $tanggal_mulai->toDateString()]) }}"
+            class="btn btn-secondary {{ count($groupedJadwal) ? '' : 'disabled' }}">✎ Edit</a>
         </div>
         <div>
             <a href="{{ route('cuti.index') }}" class="btn btn-warning">Cuti Karyawan</a>

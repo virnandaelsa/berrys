@@ -1,0 +1,84 @@
+.flash-message {
+    position: fixed;
+    top: 32px;
+    right: 32px;
+    min-width: 260px;
+    max-width: 340px;
+    padding: 14px 48px 14px 52px; /* padding kanan diperbesar! */
+    border-radius: 12px;
+    font-size: 0.99rem;
+    font-weight: 500;
+    z-index: 99999;
+    color: #222;
+    background: #f4fff8;
+    border: 2px solid #B7F5CF;
+    box-shadow: 0 6px 24px rgba(30,140,67,0.06), 0 1.5px 4px rgba(0,0,0,.04);
+    opacity: 1;
+    transition: opacity 0.38s;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    position: fixed;
+    gap: 0.8em;
+}
+
+.flash-message .icon {
+    position: absolute;
+    left: 18px;
+    font-size: 1.5em;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.97;
+}
+
+.flash-message.success {
+    color: #227f4a;
+    background: #f4fff8;
+    border-color: #B7F5CF;
+}
+.flash-message.success .icon {
+    color: #25b66b;
+}
+.flash-message.error {
+    color: #b20000;
+    background: #fff4f4;
+    border-color: #ffd5d5;
+}
+.flash-message.error .icon {
+    color: #d93939;
+}
+
+.flash-message .close-btn {
+    position: absolute;
+    top: 2px;
+    right: 18px;
+    color: #888;
+    background: none;
+    border: none;
+    font-size: 1.3em;
+    cursor: pointer;
+    opacity: 0.7;
+    z-index: 2;
+    padding: 6px 10px;
+    border-radius: 5px;
+    transition: background 0.2s, opacity 0.2s;
+}
+
+.flash-message .close-btn:hover {
+    opacity: 1;
+    background: #eaeaea;
+}
+
+.flash-message .progress-bar {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #25b66b, #B7F5CF);
+    border-radius: 0 0 8px 8px;
+    transform: scaleX(1);
+    transform-origin: left;
+    transition: transform linear;
+}
+.flash-message.error .progress-bar {
+    background: linear-gradient(90deg, #d93939, #ffd5d5);
+}

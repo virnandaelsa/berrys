@@ -13,13 +13,16 @@ use App\Http\Controllers\LoginController;
 
 Route::get('/', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('login.submit');
+Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard.index');
 
 Route::get('/karyawan/riwayat', [KaryawanController::class, 'riwayat'])->name('karyawan.riwayat');
-Route::resource('karyawan', KaryawanController::class);
-Route::get('/karyawan/{id}', [KaryawanController::class, 'show']);
-Route::put('/karyawan/{id}', [KaryawanController::class, 'update']);
+Route::post('/karyawan/store', [KaryawanController::class, 'store'])->name('karyawan.store');
+Route::get('/karyawan/aktif', [KaryawanController::class, 'index'])->name('karyawan.index');
+Route::get('/karyawan/{id}', [KaryawanController::class, 'show'])->name('karyawan.show');
+Route::put('/karyawan/{id}', [KaryawanController::class, 'update'])->name('karyawan.update');
+Route::get('/karyawan/{id}/edit', [KaryawanController::class, 'edit'])->name('karyawan.edit');
 
 Route::get('/jadwal', [JadwalController::class, 'index'])->name('jadwal.index');
 Route::get('/jadwal/create', [JadwalController::class, 'create'])->name('jadwal.create');

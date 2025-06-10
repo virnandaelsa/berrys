@@ -11,6 +11,9 @@
         <div class="row">
             <div class="col-md-4">
                 <label for="bulan" class="form-label">Bulan</label>
+                @php
+                    \Carbon\Carbon::setLocale('id');
+                @endphp
                 <select id="bulan" name="bulan" class="form-control">
                     @for ($i = 1; $i <= 12; $i++)
                         <option value="{{ $i }}" {{ (request('bulan', now()->format('m')) == $i) ? 'selected' : '' }}>
@@ -72,7 +75,7 @@
                     <a href="{{ route('penggajian.detail', ['id' => $rekap['id_karyawan'], 'bulan' => $rekap['bulan'], 'tahun' => $rekap['tahun']]) }}" class="btn btn-sm btn-info">
                         Detail
                     </a>
-                    <a href="{{ route('penggajian.edit', ['id_karyawan' => $rekap['id_karyawan']]) }}" class="btn btn-sm btn-warning">
+                    <a href="{{ route('penggajian.edit', ['id_karyawan' => $rekap['id_karyawan'], 'bulan' => $rekap['bulan'], 'tahun' => $rekap['tahun']]) }}" class="btn btn-sm btn-warning">
                         Edit Gaji
                     </a>
                 </td>

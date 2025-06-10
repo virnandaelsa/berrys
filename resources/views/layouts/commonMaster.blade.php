@@ -17,6 +17,7 @@
   <link rel="icon" type="image/x-icon" href="{{ asset('assets/img/favicon/berrys.png') }}" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 
+
   <!-- jQuery (dimuat pertama kali) -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
@@ -32,15 +33,20 @@
   <!-- Bootstrap Select JS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.18/js/bootstrap-select.min.js"></script>
 
-  <!-- Mengatur pesan sukses dari session ke variabel JavaScript -->
-  <script>
-      @if(session('success'))
-          window.successMessage = @json(session('success'));
-      @endif
-  </script>
+<script>
+    @if(session('success'))
+        window.successMessage = @json(session('success'));
+    @endif
+    @if(session('error'))
+        window.errorMessage = @json(session('error'));
+    @endif
+</script>
 
-  <!-- Menyertakan file JS yang berisi kode untuk menampilkan notifikasi -->
-  <script src="{{ asset('assets/js/notifications.js') }}"></script>
+    <!-- Menyertakan file JS yang berisi kode untuk menampilkan notifikasi -->
+    <link rel="stylesheet" href="{{ asset('assets/css/notifications.css') }}">
+    <script src="{{ asset('assets/js/notifications.js') }}"></script>
+
+
 
   <!-- Include Styles -->
   @include('layouts/sections/styles')

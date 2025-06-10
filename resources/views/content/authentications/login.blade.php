@@ -1,6 +1,6 @@
 @extends('layouts/blankLayout')
 
-@section('title', 'Login Basic - Pages')
+@section('title', 'Login')
 
 @section('page-style')
 <!-- Page -->
@@ -27,29 +27,41 @@
           <h4 class="mb-2" style="color: white;">Welcome to Berry's Bakery! 👋</h4>
           <p class="mb-4" style="color: white;">Please sign-in to your account</p>
 
-          {{-- Tampilkan pesan error --}}
-          @if($errors->has('login_error'))
-            <div class="alert alert-danger">
-              {{ $errors->first('login_error') }}
-            </div>
-          @endif
+            @if(session('success'))
+                <div class="alert alert-success">
+                    {{ session('success') }}
+                </div>
+            @endif
+
+            <!-- Jika ada pesan flash error -->
+            @if(session('error'))
+                <div class="alert alert-danger">
+                    {{ session('error') }}
+                </div>
+            @endif
 
           <form id="formAuthentication" class="mb-3" action="{{ route('login.submit') }}" method="POST">
             @csrf
             <div class="form-floating form-floating-outline mb-3">
-              <input type="text" class="form-control" id="username" name="username" placeholder="Enter your username" autofocus>
+              <input type="text" class="form-control  @error('username') is-invalid @enderror" id="username" name="username" placeholder="Enter your username" autofocus>
               <label for="username">Username</label>
+                @error('username')
+                    <div class="text-white">{{ $message }}</div>
+                @enderror
             </div>
             <br>
             <div class="mb-3">
               <div class="form-password-toggle">
                 <div class="input-group input-group-merge">
                   <div class="form-floating form-floating-outline">
-                    <input type="password" id="password" class="form-control" name="password" placeholder="Password" />
+                    <input type="password" id="password" class="form-control @error('password') is-invalid @enderror" name="password" placeholder="Password" />
                     <label for="password">Password</label>
                   </div>
                   <span class="input-group-text cursor-pointer"><i class="mdi mdi-eye-off-outline"></i></span>
                 </div>
+                @error('password')
+                        <div class="text-white">{{ $message }}</div>
+                @enderror
               </div>
             </div>
             <br>

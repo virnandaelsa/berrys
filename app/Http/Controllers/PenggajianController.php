@@ -24,6 +24,7 @@ class PenggajianController extends Controller
     $tahun = $request->query('tahun', now()->year); // Default ke tahun sekarang
 
     $url = config('api.base_url');
+    $token = session('token'); // Ambil token dari session
     \Log::info('Parameter Bulan dan Tahun:', ['bulan' => $bulan, 'tahun' => $tahun]);
 
     try {
@@ -31,6 +32,10 @@ class PenggajianController extends Controller
             'query' => [
                 'bulan' => $bulan,
                 'tahun' => $tahun,
+            ],
+            'headers' => [
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer ' . $token, // Tambahkan header Authorization
             ],
         ]);
 
@@ -52,6 +57,7 @@ class PenggajianController extends Controller
      public function showByKaryawan($id, Request $request)
 {
     $url = config('api.base_url');
+    $token = session('token'); // Ambil token dari session
 
     // Ambil parameter bulan dan tahun dari URL atau gunakan default
     $bulan = $request->query('bulan', now()->format('m')); // Default ke bulan saat ini
@@ -61,10 +67,15 @@ class PenggajianController extends Controller
 
     try {
         // Tambahkan parameter bulan dan tahun ke URL API
-        $apiUrl = "{$url}/penggajian/karyawan/{$id}?bulan={$bulan}&tahun={$tahun}";
+        $apiUrl = "{$url}/penggajian/{$id}?bulan={$bulan}&tahun={$tahun}";
         Log::info("Mengirim permintaan GET ke URL: {$apiUrl}");
 
-        $response = $this->client->request('GET', $apiUrl);
+        $response = $this->client->request('GET', $apiUrl, [
+            'headers' => [
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer ' . $token, // Tambahkan header Authorization
+            ],
+        ]);
         Log::info("Permintaan berhasil, menerima respon dari API.");
 
         $penggajian = json_decode($response->getBody()->getContents(), true);
@@ -119,9 +130,14 @@ class PenggajianController extends Controller
         $tahun = $request->query('tahun');
 
         $url = config('api.base_url');
+        $token = session('token');
         try {
             $response = $this->client->request('GET', "{$url}/penggajian/{$id_karyawan}/month-year", [
                 'query' => ['bulan' => $bulan, 'tahun' => $tahun],
+                    'headers' => [
+                        'Accept' => 'application/json',
+                        'Authorization' => 'Bearer ' . $token, // Tambahkan header Authorization
+                    ],
             ]);
             $data = json_decode($response->getBody()->getContents(), true);
 
@@ -144,12 +160,18 @@ class PenggajianController extends Controller
     $tahun = request('tahun', now()->year);       // Default ke tahun sekarang
 
     $url = config('api.base_url');
+    $token = session('token'); // Ambil token dari session
     try {
         // Tambahkan parameter bulan dan tahun ke URL API
-        $apiUrl = "{$url}/penggajian/karyawan/{$id_karyawan}?bulan={$bulan}&tahun={$tahun}";
+        $apiUrl = "{$url}/penggajian/{$id_karyawan}?bulan={$bulan}&tahun={$tahun}";
         \Log::info("Mengirim permintaan GET ke URL: {$apiUrl}");
 
-        $response = $this->client->request('GET', $apiUrl);
+        $response = $this->client->request('GET', $apiUrl, [
+            'headers' => [
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer ' . $token, // Tambahkan header Authorization
+            ],
+        ]);
         $penggajian = json_decode($response->getBody()->getContents(), true);
 
         \Log::info('Respons API:', $penggajian);
@@ -189,6 +211,7 @@ class PenggajianController extends Controller
     $keterangan = $request->input('keterangan');
 
     $url = config('api.base_url');
+    $token = session('token'); // Ambil token dari session
     \Log::info("Memulai proses tambah/edit gaji untuk karyawan ID: {$id_karyawan}");
 
     try {
@@ -203,6 +226,10 @@ class PenggajianController extends Controller
         ]);
 
         $response = $this->client->request('POST', "{$url}/penggajian/edit-gaji", [
+            'headers' => [
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer ' . $token, // Tambahkan header Authorization
+            ],
             'json' => [
                 'id_karyawan' => $id_karyawan,
                 'jenis' => $jenis,

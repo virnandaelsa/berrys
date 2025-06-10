@@ -35,28 +35,46 @@
     <div class="mt-3">
         @foreach ($cutiData as $cuti)
         <div class="cuti-card d-flex align-items-center p-3 border rounded mb-2">
+            <!-- Checkbox -->
             <input type="checkbox" class="mr-2 checkbox-cuti" data-id="{{ $cuti['id'] }}"
-                @if($cuti['status'] === 'Diterima') checked @endif>
+                @if($cuti['status'] === 'Diterima') checked @endif
+                @if($cuti['status'] === 'Ditolak') checked @endif
+                @if($cuti['status'] !== 'Pending') disabled @endif>
+
             <div class="flex-grow-1">
                 <p class="nama-karyawan mb-1">
                     {{ $cuti['nama_karyawan'] }}
                     <span class="tanggal">({{ \Carbon\Carbon::parse($cuti['tanggal'])->format('d/m/Y') }})</span>
                 </p>
                 <p class="alasan-cuti text-muted mb-0">{{ $cuti['alasan'] }}</p>
+
+                <!-- Display Status -->
+                <p class="status-cuti mt-2">
+                    <strong>Status: </strong>
+                    <span class="
+                        @if($cuti['status'] === 'Diterima') text-success
+                        @elseif($cuti['status'] === 'Ditolak') text-danger
+                        @else text-warning @endif">
+                        {{ $cuti['status'] }}
+                    </span>
+                </p>
             </div>
+
             <div>
                 <!-- Form submit untuk update status -->
                 <form action="{{ route('cuti.update', $cuti['id']) }}" method="POST" style="display: inline;">
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="status" value="Ditolak">
-                    <button type="submit" class="btn btn-danger btn-sm">Tolak</button>
+                    <button type="submit" class="btn btn-danger btn-sm"
+                        @if($cuti['status'] !== 'Pending') disabled @endif>Tolak</button>
                 </form>
                 <form action="{{ route('cuti.update', $cuti['id']) }}" method="POST" style="display: inline;">
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="status" value="Diterima">
-                    <button type="submit" class="btn btn-success btn-sm">Terima</button>
+                    <button type="submit" class="btn btn-success btn-sm"
+                        @if($cuti['status'] !== 'Pending') disabled @endif>Terima</button>
                 </form>
             </div>
         </div>
@@ -65,40 +83,16 @@
 </div>
 
 <script>
-    document.getElementById("tanggal_mulai").addEventListener("change", function () {
-        let tanggalMulai = new Date(this.value);
-
-        // Pastikan tanggal mulai selalu Senin
-        let dayOfWeek = tanggalMulai.getDay(); // 0 = Minggu, 1 = Senin, ..., 6 = Sabtu
-        if (dayOfWeek !== 1) { // Jika bukan Senin
-            let daysToMonday = (dayOfWeek === 0) ? -6 : (1 - dayOfWeek); // Jika Minggu, geser ke Senin sebelumnya
-            tanggalMulai.setDate(tanggalMulai.getDate() + daysToMonday);
-        }
-
-        // Tanggal akhir adalah Minggu dalam minggu yang sama
-        let tanggalAkhir = new Date(tanggalMulai);
-        tanggalAkhir.setDate(tanggalMulai.getDate() + 6); // Tambah 6 hari
-
-        // Format tanggal ke YYYY-MM-DD
-        let formatTanggal = (date) => {
-            let d = date.getDate().toString().padStart(2, '0');
-            let m = (date.getMonth() + 1).toString().padStart(2, '0');
-            let y = date.getFullYear();
-            return `${y}-${m}-${d}`;
-        };
-
-        // Set tanggal mulai dan akhir
-        document.getElementById("tanggal_mulai").value = formatTanggal(tanggalMulai);
-        document.getElementById("tanggal_akhir").value = formatTanggal(tanggalAkhir);
-    });
-
+    // Optional: Disable checkbox after clicking "Terima" or "Tolak"
     document.querySelectorAll('.checkbox-cuti').forEach(checkbox => {
         checkbox.addEventListener('change', function () {
             let cutiId = this.getAttribute('data-id');
             let checked = this.checked;
 
+            // This will log the current checkbox change state
             console.log(`Cuti ID ${cutiId} telah ${checked ? 'ditandai' : 'tidak ditandai'}`);
         });
     });
 </script>
+
 @endsection

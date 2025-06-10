@@ -28,6 +28,9 @@ class LoginController extends Controller
     $request->validate([
         'username' => 'required',
         'password' => 'required',
+    ], [
+        'username.required' => 'Username wajib diisi!',
+        'password.required' => 'Password wajib diisi!',
     ]);
 
     $url = config('api.base_url') . '/login';
@@ -51,11 +54,14 @@ class LoginController extends Controller
         ]);
 
         $responseBody = json_decode($response->getBody(), true);
+        Log::info('Response body dari API login:', $responseBody);
 
+
+        // Jika responsenya {"token": "xxx"}
         session(['token' => $responseBody['access_token']]);
 
         // Redirect ke halaman utama atau halaman lain setelah login berhasil
-        return redirect('/dashboard');
+        return redirect('/dashboard')->with('success', 'Login berhasil');
 
     } catch (\GuzzleHttp\Exception\ClientException $e) {
         // Menangani kesalahan dan mengarahkan kembali dengan pesan kesalahan
@@ -63,8 +69,43 @@ class LoginController extends Controller
             'username' => $request->username,
             'error' => $e->getMessage()
         ]);
-        return back()->with('loginError', 'Login Gagal');
+        return back()->with('error', 'Login Gagal Username & Password Salah');
     }
 }
 
+    public function logout(Request $request)
+    {
+        Log::info('Logout attempt for User');
+
+        if (session()->has('token')) {
+            try {
+                $client = new \GuzzleHttp\Client();
+
+                $response = $client->request('POST', config('api.base_url') . '/logout', [
+                    'headers' => [
+                        'Authorization' => 'Bearer ' . session('token'),
+                    ],
+                ]);
+
+                session()->forget('token');
+                session()->invalidate();
+                session()->regenerateToken();
+
+                Log::info('Logout successful for User');
+
+                return redirect('/')->with('success', 'Logout berhasil');
+            } catch (\Exception $e) {
+                Log::error('Logout failed', ['error' => $e->getMessage()]);
+                return redirect()->back()->with('error', 'Logout gagal');
+            }
+        } else {
+            session()->forget('token');
+            session()->invalidate();
+            session()->regenerateToken();
+
+            Log::info('Logout successful without token');
+
+            return redirect('/')->with('success', 'Logout berhasil');
+        }
+    }
 }

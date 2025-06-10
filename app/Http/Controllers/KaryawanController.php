@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\RequestException;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class KaryawanController extends Controller
 {
@@ -21,9 +24,6 @@ class KaryawanController extends Controller
     $token = session('token'); // Ambil token dari session
 
 
-    dd($token);
-
-
     // Log token untuk debugging
     if ($token) {
         Log::info('Token yang digunakan untuk API:', ['token' => $token]);
@@ -36,7 +36,8 @@ class KaryawanController extends Controller
         // Menambahkan header Authorization dengan token dari session
         $response = $this->client->request('GET', "{$url}/karyawan", [
             'headers' => [
-                'Authorization' => 'Bearer ' . $token
+                'Authorization' => 'Bearer ' . $token,
+                'Accept' => 'application/json',
             ]
         ]);
 
@@ -44,12 +45,19 @@ class KaryawanController extends Controller
         $karyawanData = json_decode($response->getBody()->getContents(), true);
         Log::info('Respons dari API:', ['response' => $karyawanData]);
 
-        // Filter data karyawan
-        $karyawanAktif = collect($karyawanData['data'])->where('status', 'Aktif')->values();
-        $karyawanTidakAktif = collect($karyawanData['data'])->where('status', 'Tidak Aktif')->values();
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $perPage = 10;
 
-        // Passing data karyawan aktif ke blade utama
-        return view('content.karyawan.index', compact('karyawanAktif'));
+        $karyawanAktif = collect($karyawanData['data'])->where('status', 'Aktif')->values();
+        $pagedKaryawanAktif = new LengthAwarePaginator(
+            $karyawanAktif->slice(($currentPage - 1) * $perPage, $perPage)->values(),
+            $karyawanAktif->count(),
+            $perPage,
+            $currentPage,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+
+        return view('content.karyawan.index', ['karyawanAktif' => $pagedKaryawanAktif]);
 
     } catch (\GuzzleHttp\Exception\ClientException $e) {
         // Log kesalahan jika terjadi
@@ -65,60 +73,106 @@ class KaryawanController extends Controller
 
 
     public function riwayat()
-    {
-        $url = config('api.base_url');
-        Log::info("Fungsi riwayat() dipanggil.");
-        Log::info("Base URL: {$url}");
+{
+    $url = config('api.base_url');
+    $token = session('token'); // Ambil token dari session
+    Log::info("Fungsi riwayat() dipanggil.");
+    Log::info("Base URL: {$url}");
 
-        Log::info("Mengakses URL: {$url}/karyawan");
-        $response = $this->client->request('GET', "{$url}/karyawan");
-        Log::info('Respons API berhasil diterima.', ['status' => $response->getStatusCode()]);
+    Log::info("Mengakses URL: {$url}/karyawan");
+    $response = $this->client->request('GET', "{$url}/karyawan", [
+        'headers' => [
+            'Authorization' => 'Bearer ' . $token,
+            'Accept' => 'application/json',
+        ]
+    ]);
+    Log::info('Respons API berhasil diterima.', ['status' => $response->getStatusCode()]);
 
-        $karyawanData = json_decode($response->getBody()->getContents(), true);
-        Log::info('Data karyawan berhasil di-decode.', ['data' => $karyawanData]);
+    $karyawanData = json_decode($response->getBody()->getContents(), true);
+    Log::info('Data karyawan berhasil di-decode.', ['data' => $karyawanData]);
 
-        $karyawanTidakAktif = collect($karyawanData['data'])->where('status', 'Tidak Aktif')->values();
-        Log::info('Data karyawan tidak aktif berhasil difilter.', ['data_tidak_aktif' => $karyawanTidakAktif]);
+    $karyawanTidakAktif = collect($karyawanData['data'])->where('status', 'Tidak Aktif')->values();
 
-        return view('content.karyawan.riwayat', compact('karyawanTidakAktif'));
-    }
+    // PAGINATE 10 per halaman
+    $currentPage = \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPage();
+    $perPage = 10;
+    $pagedKaryawanTidakAktif = new \Illuminate\Pagination\LengthAwarePaginator(
+        $karyawanTidakAktif->slice(($currentPage - 1) * $perPage, $perPage)->values(),
+        $karyawanTidakAktif->count(),
+        $perPage,
+        $currentPage,
+        ['path' => request()->url(), 'query' => request()->query()]
+    );
+
+    Log::info('Data karyawan tidak aktif berhasil dipaginate.', ['page_data' => $pagedKaryawanTidakAktif]);
+
+    return view('content.karyawan.riwayat', ['karyawanTidakAktif' => $pagedKaryawanTidakAktif]);
+}
 
     public function show($id)
-    {
-        $url = config('api.base_url');
-        $endpoint = "{$url}/karyawan/{$id}";
+{
+    $url = config('api.base_url');
+    $token = session('token');
+    $endpoint = "{$url}/karyawan/{$id}";
 
-        \Log::info("Mengambil data dari endpoint: {$endpoint}");
+    try {
+        $response = $this->client->request('GET', $endpoint, [
+            'headers' => [
+                'Authorization' => 'Bearer ' . $token,
+                'Accept' => 'application/json',
+            ]
+        ]);
+        $body = json_decode($response->getBody()->getContents(), true);
 
-        try {
-            $response = $this->client->request('GET', $endpoint);
-            $body = json_decode($response->getBody()->getContents(), true);
+        \Carbon\Carbon::setLocale('id');
 
-            \Log::info("Respons dari API:", $body);
-
-            return response()->json($body);
-        } catch (\Exception $e) {
-            \Log::error("Gagal mengambil data dari API: {$e->getMessage()}");
-
-            return response()->json(['error' => 'Unable to fetch data'], 500);
+        if (isset($body['data'])) {
+            if (isset($body['data']['tanggal_lahir'])) {
+                $body['data']['tanggal_lahir'] = \Carbon\Carbon::parse($body['data']['tanggal_lahir'])->format('Y-m-d');
+                $body['data']['tanggal_lahir_formatted'] = \Carbon\Carbon::parse($body['data']['tanggal_lahir'])->translatedFormat('d F Y');
+            }
+            if (isset($body['data']['tanggal_masuk'])) {
+                $body['data']['tanggal_masuk'] = \Carbon\Carbon::parse($body['data']['tanggal_masuk'])->format('Y-m-d');
+                $body['data']['tanggal_masuk_formatted'] = \Carbon\Carbon::parse($body['data']['tanggal_masuk'])->translatedFormat('d F Y');
+            }
         }
+
+        \Log::info("Respons dari API (after format):", $body);
+
+        return response()->json($body);
+    } catch (\Exception $e) {
+        \Log::error("Gagal mengambil data dari API: {$e->getMessage()}");
+        return response()->json(['error' => 'Unable to fetch data'], 500);
     }
+}
 
     public function store(Request $request)
-    {
-        $url = config('api.base_url'); // Mendapatkan URL API dari config
+{
+    $url = config('api.base_url');
+    $token = session('token');
 
-        // Mengirim data melalui POST request ke API
+    try {
         $response = $this->client->request('POST', "{$url}/karyawan", [
-            'json' => $request->all(), // Mengirimkan data form yang diterima
+            'headers' => [
+                'Authorization' => 'Bearer ' . $token,
+                'Accept' => 'application/json',
+            ],
+            'json' => $request->all(),
+            'timeout' => 10,
         ]);
 
-        // Mengambil response untuk melihat apakah data berhasil ditambahkan
-        $karyawan = json_decode($response->getBody()->getContents(), true);
-
-        // Redirect atau menampilkan halaman lain
         return redirect()->route('karyawan.index')->with('success', 'Karyawan berhasil ditambahkan');
+    } catch (ClientException | RequestException $e) { // Tangkap dua-duanya
+        if ($e->hasResponse() && $e->getResponse()->getStatusCode() === 422) {
+            $responseBody = json_decode($e->getResponse()->getBody()->getContents(), true);
+            $errors = $responseBody['error'] ?? ['Terjadi kesalahan validasi.'];
+            return back()->withErrors($errors)->withInput();
+        }
+        return back()->with('error', 'Gagal menambahkan karyawan. ' . $e->getMessage());
+    } catch (\Exception $e) {
+        return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
     }
+}
 
     public function edit($id)
     {
@@ -143,18 +197,24 @@ class KaryawanController extends Controller
 
     public function update(Request $request, $id)
     {
-        $url = config('api.base_url'); // Mendapatkan URL API dari config
+        $url = config('api.base_url');
+        $token = session('token'); // Pastikan token dari session
 
-        // Mengirimkan data melalui PUT request untuk mengupdate karyawan
-        $response = $this->client->request('PUT', "{$url}/karyawan/{$id}", [
-            'json' => $request->all(), // Mengirimkan data form yang diperbarui
-        ]);
+        try {
+            $response = $this->client->request('PUT', "{$url}/karyawan/{$id}", [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $token,
+                    'Accept' => 'application/json',
+                ],
+                'json' => $request->all(),
+            ]);
 
-        // Mengambil response untuk melihat apakah data berhasil diperbarui
-        $karyawan = json_decode($response->getBody()->getContents(), true);
+            $karyawan = json_decode($response->getBody()->getContents(), true);
 
-        // Redirect ke halaman index setelah update berhasil
-        return redirect()->route('karyawan.index')->with('success', 'Karyawan berhasil diperbarui');
+            return redirect()->route('karyawan.index')->with('success', 'Karyawan berhasil diperbarui');
+        } catch (\GuzzleHttp\Exception\RequestException $e) {
+            return back()->with('error', 'Gagal memperbarui karyawan. ' . $e->getMessage());
+        }
     }
 
     public function destroy($id)

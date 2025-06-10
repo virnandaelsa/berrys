@@ -52,24 +52,44 @@
                                             <!-- Dropdown multiple untuk Produksi -->
                                             <select name="jadwal[{{ $tempat }}][{{ $shift }}][{{ $hari }}][id_karyawan][]" class="form-control" multiple>
                                                 @foreach ($karyawanList as $karyawan)
-                                                    <option value="{{ $karyawan['id'] }}"
-                                                        {{ isset($jadwalHari) && in_array($karyawan['id'], explode(',', $jadwalHari['id_karyawan'] ?? '')) ? 'selected' : '' }}>
-                                                        {{ $karyawan['nama'] }}
-                                                    </option>
+                                                    @if ($karyawan['role'] === 'Produksi')
+                                                        <option value="{{ $karyawan['id'] }}"
+                                                            {{ isset($jadwalHari) && in_array($karyawan['id'], explode(',', $jadwalHari['id_karyawan'] ?? '')) ? 'selected' : '' }}>
+                                                            {{ $karyawan['nama'] }}
+                                                        </option>
+                                                    @endif
+                                                @endforeach
+                                            </select>
+                                        @elseif ($tempat === 'Kurir')
+                                            <!-- Dropdown single khusus Kurir -->
+                                            <select name="jadwal[{{ $tempat }}][{{ $shift }}][{{ $hari }}][id_karyawan]" class="form-control jadwal-select"
+                                                data-hari="{{ $hari }}" data-tempat="{{ $tempat }}">
+                                                <option value="">-</option>
+                                                @foreach ($karyawanList as $karyawan)
+                                                    @if ($karyawan['role'] === 'Kurir')
+                                                        <option value="{{ $karyawan['id'] }}"
+                                                            {{ isset($jadwalHari) && $jadwalHari['id_karyawan'] == $karyawan['id'] ? 'selected' : '' }}>
+                                                            {{ $karyawan['nama'] }}
+                                                        </option>
+                                                    @endif
                                                 @endforeach
                                             </select>
                                         @else
-                                            <!-- Dropdown single untuk tempat selain Produksi -->
-                                            <select name="jadwal[{{ $tempat }}][{{ $shift }}][{{ $hari }}][id_karyawan]" class="form-control">
+                                            <!-- Tempat lainnya: bukan produksi dan bukan kurir -->
+                                            <select name="jadwal[{{ $tempat }}][{{ $shift }}][{{ $hari }}][id_karyawan]" class="form-control jadwal-select"
+                                                data-hari="{{ $hari }}" data-tempat="{{ $tempat }}">
                                                 <option value="">-</option>
                                                 @foreach ($karyawanList as $karyawan)
-                                                    <option value="{{ $karyawan['id'] }}"
-                                                        {{ isset($jadwalHari) && $jadwalHari['id_karyawan'] == $karyawan['id'] ? 'selected' : '' }}>
-                                                        {{ $karyawan['nama'] }}
-                                                    </option>
+                                                    @if ($karyawan['role'] !== 'Produksi' && $karyawan['role'] !== 'Kurir')
+                                                        <option value="{{ $karyawan['id'] }}"
+                                                            {{ isset($jadwalHari) && $jadwalHari['id_karyawan'] == $karyawan['id'] ? 'selected' : '' }}>
+                                                            {{ $karyawan['nama'] }}
+                                                        </option>
+                                                    @endif
                                                 @endforeach
                                             </select>
                                         @endif
+
                                     </td>
                                 @endforeach
                             </tr>
@@ -83,4 +103,60 @@
         <a href="{{ route('jadwal.index') }}" class="btn btn-secondary">Batal</a>
     </form>
 </div>
+
+<script>
+document.querySelectorAll(".jadwal-select").forEach(function(selectEl) {
+    selectEl.addEventListener("change", function () {
+        const allSelects = document.querySelectorAll(".jadwal-select");
+        const selectedMap = {}; // Kunci: hari + id_karyawan
+        let hasDuplicate = false;
+
+        // Reset semua warning dan border
+        allSelects.forEach(sel => {
+            sel.classList.remove("border-danger");
+            const warningEl = sel.parentElement.querySelector(".duplicate-warning");
+            if (warningEl) warningEl.remove();
+        });
+
+        allSelects.forEach(function (sel) {
+            const hari = sel.dataset.hari;
+            const values = Array.from(sel.selectedOptions).map(opt => opt.value).filter(val => val !== "");
+
+            values.forEach(val => {
+                const key = `${hari}-${val}`; // hanya cek duplikat di hari yang sama
+                if (!selectedMap[key]) {
+                    selectedMap[key] = [];
+                }
+                selectedMap[key].push(sel);
+            });
+        });
+
+        // Tandai duplikat
+        Object.keys(selectedMap).forEach(key => {
+            if (selectedMap[key].length > 1) {
+                selectedMap[key].forEach(el => {
+                    el.classList.add("border-danger");
+                    if (!el.parentElement.querySelector(".duplicate-warning")) {
+                        const warning = document.createElement('div');
+                        warning.classList.add('text-danger', 'duplicate-warning', 'mt-1');
+                        warning.innerHTML = '⚠️ Duplikat';
+                        el.parentElement.appendChild(warning);
+                    }
+                });
+                hasDuplicate = true;
+            }
+        });
+
+        // Tombol submit
+        const submitButton = document.querySelector('button[type="submit"]');
+        if (hasDuplicate) {
+            submitButton.disabled = true;
+            submitButton.classList.add("disabled");
+        } else {
+            submitButton.disabled = false;
+            submitButton.classList.remove("disabled");
+        }
+    });
+});
+</script>
 @endsection

@@ -1,10 +1,10 @@
 @extends('layouts/contentNavbarLayout')
 
-@section('title', 'Riwayat Karyawan')
+@section('title', 'Karyawan Tidak Aktif')
 
 @section('content')
 <div class="container">
-    <h2>📜 Riwayat Karyawan Tidak Aktif</h2>
+    <h2>📜 Karyawan Tidak Aktif</h2>
 
     <!-- Tabel Riwayat Karyawan Tidak Aktif -->
     <table class="table mt-3">
@@ -23,7 +23,10 @@
             <tr>
                 <td>{{ $loop->iteration }}</td>
                 <td>{{ $karyawan['nama'] }}</td>
-                <td>{{ \Carbon\Carbon::parse($karyawan['tanggal_masuk'])->format('d/m/Y') }}</td>
+                @php
+                    \Carbon\Carbon::setLocale('id');
+                @endphp
+                <td>{{ \Carbon\Carbon::parse($karyawan['tanggal_masuk'])->translatedFormat('d F Y') }}</td>
                 <td>{{ $karyawan['role'] }}</td>
                 <td>
                     <span class="badge bg-danger">Tidak Aktif</span>
@@ -43,6 +46,7 @@
             @endforeach
         </tbody>
     </table>
+{{ $karyawanTidakAktif->links('pagination::bootstrap-5') }}
 </div>
 
 <!-- MODAL SHOW KARYAWAN -->

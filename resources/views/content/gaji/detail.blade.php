@@ -9,7 +9,10 @@
             <h2 style="color: white;">Detail Gaji Karyawan</h2>
         </div>
         <div class="card-body">
-            <div class="row">
+            @php
+                \Carbon\Carbon::setLocale('id');
+            @endphp
+                        <div class="row">
                 <div class="col-md-6">
                     <h4 class="mb-3"><strong>Informasi Karyawan</strong></h4>
                         <p class="mb-3"><strong>Nama:</strong> {{ $karyawan['nama'] ?? 'Tidak tersedia' }}</p>

@@ -65,8 +65,8 @@
         <div>Karyawan</div>
       </a>
       <ul class="menu-sub">
-        <li class="menu-item {{ request()->is('karyawan') ? 'active' : '' }}">
-          <a href="{{ url('/karyawan') }}" class="menu-link">
+        <li class="menu-item {{ request()->is('karyawan/aktif') ? 'active' : '' }}">
+          <a href="{{ url('/karyawan/aktif') }}" class="menu-link">
             <div>Aktif</div>
           </a>
         </li>

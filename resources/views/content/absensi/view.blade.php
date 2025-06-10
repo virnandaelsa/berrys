@@ -37,12 +37,8 @@
                 <tr>
                     <td>{{ $loop->iteration }}</td>
                     <td>{{ $karyawan['karyawan']['nama'] ?? 'Tidak tersedia' }}</td>
-                    <td>
-                        {{ $karyawan['absensi'][0]['jadwal']['tempat'] ?? 'Tidak tersedia' }}
-                    </td>
-                    <td>
-                        {{ $karyawan['absensi'][0]['jadwal']['shift'] ?? 'Tidak tersedia' }}
-                    </td>
+                    <td>{{ $karyawan['absensi'][0]['jadwal']['tempat'] ?? 'Tidak tersedia' }}</td>
+                    <td>{{ $karyawan['absensi'][0]['jadwal']['shift'] ?? 'Tidak tersedia' }}</td>
 
                     {{-- Absensi Pertama --}}
                     <td>
@@ -63,19 +59,57 @@
 
                     <td>
                         @if(isset($karyawan['absensi'][0]['photo']) && $karyawan['absensi'][0]['photo'])
-                            <img src="{{ config('api.photo_url') . '/' . $karyawan['absensi'][0]['photo'] }}" alt="Foto Absensi 1" width="100" height="100">
+                            <a href="#" data-bs-toggle="modal" data-bs-target="#fotoModal{{ $karyawan['absensi'][0]['photo'] }}">
+                                <img src="{{ config('api.photo_url') . '/' . $karyawan['absensi'][0]['photo'] }}" alt="Foto Absensi 1" width="100" height="100">
+                            </a>
                         @else
                             <span>No Photo</span>
                         @endif
                     </td>
                     <td>
                         @if(isset($karyawan['absensi'][1]['photo']) && $karyawan['absensi'][1]['photo'])
-                            <img src="{{ config('api.photo_url') . '/' . $karyawan['absensi'][1]['photo'] }}" alt="Foto Absensi 2" width="100" height="100">
+                            <a href="#" data-bs-toggle="modal" data-bs-target="#fotoModal{{ $karyawan['absensi'][1]['photo'] }}">
+                                <img src="{{ config('api.photo_url') . '/' . $karyawan['absensi'][1]['photo'] }}" alt="Foto Absensi 2" width="100" height="100">
+                            </a>
                         @else
                             <span>No Photo</span>
                         @endif
                     </td>
                 </tr>
+
+                <!-- Modal untuk Foto Absensi -->
+                @if(isset($karyawan['absensi'][0]['photo']) && $karyawan['absensi'][0]['photo'])
+                    <div class="modal fade" id="fotoModal{{ $karyawan['absensi'][0]['photo'] }}" tabindex="-1" aria-labelledby="fotoModalLabel{{ $karyawan['absensi'][0]['photo'] }}" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="fotoModalLabel{{ $karyawan['absensi'][0]['photo'] }}">Foto Absensi 1</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <img src="{{ config('api.photo_url') . '/' . $karyawan['absensi'][0]['photo'] }}" alt="Foto Absensi 1" class="img-fluid">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                @if(isset($karyawan['absensi'][1]['photo']) && $karyawan['absensi'][1]['photo'])
+                    <div class="modal fade" id="fotoModal{{ $karyawan['absensi'][1]['photo'] }}" tabindex="-1" aria-labelledby="fotoModalLabel{{ $karyawan['absensi'][1]['photo'] }}" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="fotoModalLabel{{ $karyawan['absensi'][1]['photo'] }}">Foto Absensi 2</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <img src="{{ config('api.photo_url') . '/' . $karyawan['absensi'][1]['photo'] }}" alt="Foto Absensi 2" class="img-fluid">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
             @empty
                 <tr>
                     <td colspan="8" class="text-center">Tidak ada data absensi untuk tanggal {{ \Carbon\Carbon::parse($tanggal)->format('d-m-Y') }}.</td>
@@ -83,6 +117,7 @@
             @endforelse
         </tbody>
     </table>
+ {{ $karyawanData->links('pagination::bootstrap-5') }}
 </div>
 
 @endsection

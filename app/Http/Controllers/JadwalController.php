@@ -18,6 +18,7 @@ class JadwalController extends Controller
     public function index(Request $request)
 {
     $url = config('api.base_url');
+    $token = session('token'); // Ambil token dari session
 
     // Ambil tanggal dari request atau set default ke minggu ini
     $tanggal_mulai = $request->query('tanggal_mulai')
@@ -29,6 +30,10 @@ class JadwalController extends Controller
     try {
         // Ambil data jadwal dari API
         $response = $this->client->request('GET', "{$url}/jadwal", [
+                'headers' => [
+                    'Accept' => 'application/json',
+                    'Authorization' => 'Bearer ' . $token, // Tambahkan header Authorization
+                ],
             'query' => [
                 'tanggal_mulai' => $tanggal_mulai->toDateString(),
                 'tanggal_akhir' => $tanggal_akhir->toDateString()
@@ -115,6 +120,7 @@ class JadwalController extends Controller
     public function create()
 {
     $url = config('api.base_url');
+    $token = session('token'); // Ambil token dari session
 
     // Pastikan tanggal mulai selalu Senin
     $tanggal_mulai = now();
@@ -142,7 +148,12 @@ class JadwalController extends Controller
 
     try {
         // Ambil semua data karyawan
-        $response = $this->client->request('GET', "{$url}/karyawan");
+        $response = $this->client->request('GET', "{$url}/karyawan", [
+            'headers' => [
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer ' . $token, // Tambahkan header Authorization
+            ],
+        ]);
         $data = json_decode($response->getBody()->getContents(), true);
 
         // Filter karyawan dengan status "Aktif"
@@ -163,6 +174,7 @@ class JadwalController extends Controller
     public function store(Request $request)
     {
         $url = config('api.base_url');
+        $token = session('token'); // Ambil token dari session
 
         // Ambil tanggal awal dan akhir
         $tanggalMulai = Carbon::parse($request->tanggal_mulai);
@@ -204,6 +216,10 @@ class JadwalController extends Controller
     // Kirim data jadwal ke API
         try {
             $response = $this->client->request('POST', "{$url}/jadwal", [
+                'headers' => [
+                    'Accept' => 'application/json',
+                    'Authorization' => 'Bearer ' . $token, // Tambahkan header Authorization
+                ],
                 'json' => ['jadwal' => $jadwalData],
             ]);
             return redirect()->route('jadwal.index')->with('success', 'Jadwal berhasil ditambahkan');
@@ -215,6 +231,7 @@ class JadwalController extends Controller
     public function edit(Request $request)
 {
     $url = config('api.base_url');
+    $token = session('token'); // Ambil token dari session
     \Log::info("Memulai fungsi edit dengan URL: {$url}");
 
     // Ambil tanggal dari request atau default ke minggu ini
@@ -230,6 +247,10 @@ class JadwalController extends Controller
     try {
         // Ambil data jadwal berdasarkan rentang tanggal
         $response = $this->client->request('GET', "{$url}/jadwal", [
+            'headers' => [
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer ' . $token, // Tambahkan header Authorization
+            ],
             'query' => [
                 'tanggal_mulai' => $tanggal_mulai->toDateString(),
                 'tanggal_akhir' => $tanggal_akhir->toDateString()
@@ -244,7 +265,12 @@ class JadwalController extends Controller
 
     try {
         // Ambil semua data karyawan
-        $response = $this->client->request('GET', "{$url}/karyawan");
+        $response = $this->client->request('GET', "{$url}/karyawan", [
+            'headers' => [
+                    'Accept' => 'application/json',
+                    'Authorization' => 'Bearer ' . $token, // Tambahkan header Authorization
+                ],
+        ]);
         $data = json_decode($response->getBody()->getContents(), true);
 
         // Filter karyawan dengan status "Aktif"
@@ -282,6 +308,7 @@ class JadwalController extends Controller
 public function update(Request $request)
 {
     $url = config('api.base_url');
+    $token = session('token'); // Ambil token dari session
     \Log::info("Memulai fungsi update dengan URL: {$url}");
 
     // Ambil tanggal awal dan akhir dari request (atau default ke minggu ini)
@@ -338,6 +365,10 @@ public function update(Request $request)
     // Kirim data ke API
     try {
         $this->client->request('PUT', "{$url}/jadwal", [
+                'headers' => [
+                    'Accept' => 'application/json',
+                    'Authorization' => 'Bearer ' . $token, // Tambahkan header Authorization
+                ],
             'json' => [
                 'tanggal_mulai' => $tanggalMulai->toDateString(),
                 'tanggal_akhir' => $tanggalAkhir->toDateString(),
@@ -356,6 +387,7 @@ public function update(Request $request)
     public function show($id)
     {
         $url = config('api.base_url');
+        $token = session('token'); // Ambil token dari session
 
         try {
             $response = $this->client->request('GET', "{$url}/jadwal", [
@@ -365,7 +397,8 @@ public function update(Request $request)
                 ],
                 'headers' => [
                     'Accept' => 'application/json',
-                ]
+                    'Authorization' => 'Bearer ' . $token, // Tambahkan header Authorization
+                ],
             ]);
             $jadwalData = json_decode($response->getBody()->getContents(), true)['data'] ?? [];
             dd($jadwalData);

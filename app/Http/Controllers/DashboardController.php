@@ -17,67 +17,80 @@ class DashboardController extends Controller
     }
 
     public function dashboard(Request $request)
-{
-    try {
-        \Log::info('Memulai proses pengambilan data untuk dashboard.');
+    {
+        try {
+            \Log::info('Memulai proses pengambilan data untuk dashboard.');
 
-        $url = config('api.base_url'); // Base URL API dari .env
-        $tahun = now()->year; // Tahun saat ini
-        \Log::info("Base URL API: {$url}, Tahun: {$tahun}");
+            $url = config('api.base_url');
+            $tahun = now()->year;
+            $token = session('token'); // Ambil token dari session
 
-        // Ambil data Dashboard Admin
-        \Log::info('Mengirim permintaan ke API /dashboard/admin.');
-        $adminResponse = $this->client->get("{$url}/dashboard/admin", [
-            'headers' => [
-                'Accept' => 'application/json',
-            ],
-        ]);
-        \Log::info('Berhasil menerima respon dari API /dashboard/admin.');
+            \Log::info("Base URL API: {$url}, Tahun: {$tahun}");
 
-        $dashboardData = json_decode($adminResponse->getBody()->getContents(), true);
+            // Log token untuk debugging
+            if ($token) {
+                Log::info('Token yang digunakan untuk API:', ['token' => $token]);
+            } else {
+                Log::warning('Token tidak ditemukan di session.');
+                return back()->with('error', 'Token tidak ditemukan. Silakan login kembali.');
+            }
 
-        if ($dashboardData['status'] !== 'success') {
-            \Log::error('API /dashboard/admin mengembalikan status gagal.', [
-                'response' => $dashboardData
+            // Ambil data Dashboard Admin
+            \Log::info('Mengirim permintaan ke API /dashboard/admin.');
+            $adminResponse = $this->client->get("{$url}/dashboard/admin", [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $token, // Tambahkan header Authorization
+                    'Accept' => 'application/json',
+                ],
             ]);
-            return back()->with('error', 'Gagal mengambil data dashboard admin.');
-        }
-        \Log::info('Data Dashboard Admin berhasil diproses.', ['data' => $dashboardData]);
+            \Log::info('Berhasil menerima respon dari API /dashboard/admin.');
 
-        // Ambil data Pendapatan Tahunan
-        \Log::info('Mengirim permintaan ke API /pendapatan/tahunan.');
-        $pendapatanResponse = $this->client->get("{$url}/pendapatan/tahunan", [
-            'query' => ['tahun' => $tahun],
-            'headers' => [
-                'Accept' => 'application/json',
-            ],
-        ]);
-        \Log::info('Berhasil menerima respon dari API /pendapatan/tahunan.');
+            $dashboardData = json_decode($adminResponse->getBody()->getContents(), true);
 
-        $pendapatanData = json_decode($pendapatanResponse->getBody()->getContents(), true);
+            if ($dashboardData['status'] !== 'success') {
+                \Log::error('API /dashboard/admin mengembalikan status gagal.', [
+                    'response' => $dashboardData
+                ]);
+                return back()->with('error', 'Gagal mengambil data dashboard admin.');
+            }
+            \Log::info('Data Dashboard Admin berhasil diproses.', ['data' => $dashboardData]);
 
-        if ($pendapatanData['status'] !== 'success') {
-            \Log::error('API /pendapatan/tahunan mengembalikan status gagal.', [
-                'response' => $pendapatanData
+            // Ambil data Pendapatan Tahunan
+            \Log::info('Mengirim permintaan ke API /pendapatan/tahunan.');
+            $pendapatanResponse = $this->client->get("{$url}/pendapatan/tahunan", [
+                'query' => ['tahun' => $tahun],
+                'headers' => [
+                    'Accept' => 'application/json',
+                    'Authorization' => 'Bearer ' . $token, // Tambahkan header Authorization
+                ],
             ]);
-            return back()->with('error', 'Gagal mengambil data pendapatan tahunan.');
+            \Log::info('Berhasil menerima respon dari API /pendapatan/tahunan.');
+
+            $pendapatanData = json_decode($pendapatanResponse->getBody()->getContents(), true);
+
+            if ($pendapatanData['status'] !== 'success') {
+                \Log::error('API /pendapatan/tahunan mengembalikan status gagal.', [
+                    'response' => $pendapatanData
+                ]);
+                return back()->with('error', 'Gagal mengambil data pendapatan tahunan.');
+            }
+            \Log::info('Data Pendapatan Tahunan berhasil diproses.', ['data' => $pendapatanData]);
+
+            // Proses data pendapatan
+            $pendapatan = $pendapatanData['data']['pendapatan'] ?? array_fill(1, 12, 0);
+            \Log::info('Pendapatan per bulan:', ['pendapatan' => $pendapatan]);
+
+            // Kirim data ke view
+            \Log::info('Mengirim data ke view content.dashboard.dashboard.');
+            return view('content.dashboard.dashboard', [
+                'dashboardData' => $dashboardData['data'],
+                'pendapatan' => $pendapatan,
+                'tahun' => $tahun,
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Gagal mengambil data dashboard:', ['error' => $e->getMessage()]);
+            return back()->with('error', 'Terjadi kesalahan saat mengambil data dashboard.');
         }
-        \Log::info('Data Pendapatan Tahunan berhasil diproses.', ['data' => $pendapatanData]);
-
-        // Proses data pendapatan
-        $pendapatan = $pendapatanData['data']['pendapatan'] ?? array_fill(1, 12, 0);
-        \Log::info('Pendapatan per bulan:', ['pendapatan' => $pendapatan]);
-
-        // Kirim data ke view
-        \Log::info('Mengirim data ke view content.dashboard.dashboard.');
-        return view('content.dashboard.dashboard', [
-            'dashboardData' => $dashboardData['data'], // Data dashboard admin
-            'pendapatan' => $pendapatan,              // Data pendapatan bulanan
-            'tahun' => $tahun,                        // Tahun saat ini
-        ]);
-    } catch (\Exception $e) {
-        \Log::error('Gagal mengambil data dashboard:', ['error' => $e->getMessage()]);
-        return back()->with('error', 'Terjadi kesalahan saat mengambil data dashboard.');
     }
-}
 }

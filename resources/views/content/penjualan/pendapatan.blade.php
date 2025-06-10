@@ -39,7 +39,7 @@
                             <th style="width: 120px; text-align: center; white-space: nowrap;">Omset Sistem</th>
                             <th style="text-align: center;">Status</th>
                             <th style="width: 120px; text-align: center; white-space: nowrap;">Selisih</th>
-                            <th style="text-align: center;">>Catatan</th>
+                            <th style="text-align: center;">Catatan</th>
                         </tr>
                     </thead>
                     <tbody>

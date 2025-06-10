@@ -49,19 +49,35 @@
                                         <input type="hidden" name="jadwal[{{ $tempat }}][{{ $shift }}][{{ $hari }}][hari]" value="{{ $hari }}">
 
                                         @if ($tempat === 'Produksi')
-                                            <!-- Dropdown multiple untuk memilih lebih dari satu karyawan -->
+                                            <!-- Dropdown multiple untuk Produksi, hanya tampilkan karyawan role 'produksi' -->
                                             <select name="jadwal[{{ $tempat }}][{{ $shift }}][{{ $hari }}][id_karyawan][]" class="form-control" multiple>
-                                                <option disabled selected>Pilih Karyawan</option>
+                                                <option value="" selected>-</option>
                                                 @foreach ($karyawanList as $karyawan)
-                                                    <option value="{{ $karyawan['id'] }}">{{ $karyawan['nama'] }}</option>
+                                                    @if ($karyawan['role'] === 'Produksi')
+                                                        <option value="{{ $karyawan['id'] }}">{{ $karyawan['nama'] }}</option>
+                                                    @endif
+                                                @endforeach
+                                            </select>
+                                        @elseif ($tempat === 'Kurir')
+                                            <!-- Dropdown single untuk Kurir, hanya tampilkan karyawan role 'kurir' -->
+                                            <select name="jadwal[{{ $tempat }}][{{ $shift }}][{{ $hari }}][id_karyawan]" class="form-control jadwal-select"
+                                                data-hari="{{ $hari }}"data-tempat="{{ $tempat }}">
+                                                <option value="" selected>-</option>
+                                                @foreach ($karyawanList as $karyawan)
+                                                    @if ($karyawan['role'] === 'Kurir')
+                                                        <option value="{{ $karyawan['id'] }}">{{ $karyawan['nama'] }}</option>
+                                                    @endif
                                                 @endforeach
                                             </select>
                                         @else
-                                            <!-- Dropdown single untuk tempat selain Produksi -->
-                                            <select name="jadwal[{{ $tempat }}][{{ $shift }}][{{ $hari }}][id_karyawan]" class="form-control">
-                                                <option value="" disabled selected>Pilih Karyawan</option>
+                                            <!-- Tempat lainnya, tampilkan semua -->
+                                            <select name="jadwal[{{ $tempat }}][{{ $shift }}][{{ $hari }}][id_karyawan]" class="form-control jadwal-select"
+                                                data-hari="{{ $hari }}" data-tempat="{{ $tempat }}">
+                                                <option value="" selected>-</option>
                                                 @foreach ($karyawanList as $karyawan)
-                                                    <option value="{{ $karyawan['id'] }}">{{ $karyawan['nama'] }}</option>
+                                                    @if ($karyawan['role'] !== 'Produksi' && $karyawan['role'] !== 'Kurir')
+                                                        <option value="{{ $karyawan['id'] }}">{{ $karyawan['nama'] }}</option>
+                                                    @endif
                                                 @endforeach
                                             </select>
                                         @endif
@@ -97,6 +113,62 @@ document.getElementById("tanggal_mulai").addEventListener("change", function () 
     let tglAkhir = new Date(tglMulai);
     tglAkhir.setDate(tglAkhir.getDate() + 6);
     document.getElementById("tanggal_akhir").value = tglAkhir.toISOString().split("T")[0];
+});
+</script>
+
+<script>
+document.querySelectorAll(".jadwal-select").forEach(function(selectEl) {
+    selectEl.addEventListener("change", function () {
+        const allSelects = document.querySelectorAll(".jadwal-select");
+        const selectedMap = {}; // Kunci: hari + id_karyawan
+        let hasDuplicate = false;
+
+        // Reset semua warning dan border
+        allSelects.forEach(sel => {
+            sel.classList.remove("border-danger");
+            const warningEl = sel.parentElement.querySelector(".duplicate-warning");
+            if (warningEl) warningEl.remove();
+        });
+
+        allSelects.forEach(function (sel) {
+            const hari = sel.dataset.hari;
+            const values = Array.from(sel.selectedOptions).map(opt => opt.value).filter(val => val !== "");
+
+            values.forEach(val => {
+                const key = `${hari}-${val}`; // hanya cek duplikat di hari yang sama
+                if (!selectedMap[key]) {
+                    selectedMap[key] = [];
+                }
+                selectedMap[key].push(sel);
+            });
+        });
+
+        // Tandai duplikat
+        Object.keys(selectedMap).forEach(key => {
+            if (selectedMap[key].length > 1) {
+                selectedMap[key].forEach(el => {
+                    el.classList.add("border-danger");
+                    if (!el.parentElement.querySelector(".duplicate-warning")) {
+                        const warning = document.createElement('div');
+                        warning.classList.add('text-danger', 'duplicate-warning', 'mt-1');
+                        warning.innerHTML = '⚠️ Duplikat';
+                        el.parentElement.appendChild(warning);
+                    }
+                });
+                hasDuplicate = true;
+            }
+        });
+
+        // Tombol submit
+        const submitButton = document.querySelector('button[type="submit"]');
+        if (hasDuplicate) {
+            submitButton.disabled = true;
+            submitButton.classList.add("disabled");
+        } else {
+            submitButton.disabled = false;
+            submitButton.classList.remove("disabled");
+        }
+    });
 });
 </script>
 
