@@ -18,7 +18,7 @@
     <li class="menu-item {{ request()->is('penjualan/*') ? 'active open' : '' }}">
       <a href="javascript:void(0);" class="menu-link menu-toggle">
         <i class="mdi mdi-cash-multiple"></i>
-        <div>Penjualan</div>
+        <div>Laporan Penjualan</div>
       </a>
       <ul class="menu-sub">
         <li class="menu-item {{ request()->is('penjualan/laporan-donat') ? 'active' : '' }}">

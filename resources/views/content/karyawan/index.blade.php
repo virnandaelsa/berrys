@@ -26,7 +26,7 @@
         <tbody>
             @foreach($karyawanAktif as $karyawan)
             <tr>
-                <td>{{ $loop->iteration }}</td>
+                <td>{{ ($karyawanAktif->currentPage() - 1) * $karyawanAktif->perPage() + $loop->iteration }}</td>
                 <td>{{ $karyawan['nama'] }}</td>
                @php
                     \Carbon\Carbon::setLocale('id');
@@ -48,7 +48,7 @@
             @endforeach
         </tbody>
     </table>
-{{ $karyawanAktif->links('pagination::bootstrap-5') }}
+{{ $karyawanAktif->appends(request()->query())->links('pagination::bootstrap-5') }}
 </div>
 
 <!-- MODAL TAMBAH KARYAWAN -->
@@ -244,6 +244,8 @@
                     @csrf
                     @method('PUT')
 
+                    <input type="hidden" name="page" value="{{ request('page', 1) }}">
+                    <input type="hidden" name="from" value="index">
                     <input type="hidden" id="edit_id" name="id" value="{{ old('id', $data->id ?? '') }}">
 
                     <div class="mb-3">

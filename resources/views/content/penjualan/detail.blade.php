@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="container mx-auto p-6">
-        <h1 class="text-3xl font-bold mb-6 text-gray-800">📋 Detail Laporan Donat</h1>
+        <h1 class="text-3xl font-bold mb-6 text-gray-800">📋 Detail Laporan Stok Donat</h1>
 
         @if(session('error'))
             <div class="mb-4 p-4 bg-red-100 text-red-700 rounded-lg">
@@ -34,7 +34,7 @@
         @endif
 
         <div class="mb-6">
-            <h2>📦 Detail Laporan Datang</h2>
+            <h2>📦 Detail Stok Laporan Datang</h2>
             <table class="table table-bordered">
                 <thead class="table-light">
                     <tr>
@@ -114,7 +114,7 @@
 
         <!-- Tabel Laporan Pulang -->
         <div class="mb-6">
-            <h2>📦 Laporan Pulang</h2>
+            <h2>📦 Detail Stok Laporan Pulang</h2>
             <table class="table table-bordered">
                 <thead class="table-light">
                     <tr>

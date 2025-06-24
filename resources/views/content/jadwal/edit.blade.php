@@ -50,7 +50,7 @@
                                     <td>
                                         @if ($tempat === 'Produksi')
                                             <!-- Dropdown multiple untuk Produksi -->
-                                            <select name="jadwal[{{ $tempat }}][{{ $shift }}][{{ $hari }}][id_karyawan][]" class="form-control" multiple>
+                                            <select name="jadwal[{{ $tempat }}][{{ $shift }}][{{ $hari }}][id_karyawan_baru][]" class="form-control" multiple>
                                                 @foreach ($karyawanList as $karyawan)
                                                     @if ($karyawan['role'] === 'Produksi')
                                                         <option value="{{ $karyawan['id'] }}"
@@ -60,9 +60,15 @@
                                                     @endif
                                                 @endforeach
                                             </select>
+                                            {{-- Hidden input untuk id_karyawan_lama --}}
+                                            @if(isset($jadwalHari))
+                                                @foreach(explode(',', $jadwalHari['id_karyawan'] ?? '') as $idLama)
+                                                    <input type="hidden" name="jadwal[{{ $tempat }}][{{ $shift }}][{{ $hari }}][id_karyawan_lama][]" value="{{ $idLama }}">
+                                                @endforeach
+                                            @endif
                                         @elseif ($tempat === 'Kurir')
                                             <!-- Dropdown single khusus Kurir -->
-                                            <select name="jadwal[{{ $tempat }}][{{ $shift }}][{{ $hari }}][id_karyawan]" class="form-control jadwal-select"
+                                            <select name="jadwal[{{ $tempat }}][{{ $shift }}][{{ $hari }}][id_karyawan_baru]" class="form-control jadwal-select"
                                                 data-hari="{{ $hari }}" data-tempat="{{ $tempat }}">
                                                 <option value="">-</option>
                                                 @foreach ($karyawanList as $karyawan)
@@ -74,9 +80,10 @@
                                                     @endif
                                                 @endforeach
                                             </select>
+                                            <input type="hidden" name="jadwal[{{ $tempat }}][{{ $shift }}][{{ $hari }}][id_karyawan_lama]" value="{{ $jadwalHari['id_karyawan'] ?? '' }}">
                                         @else
                                             <!-- Tempat lainnya: bukan produksi dan bukan kurir -->
-                                            <select name="jadwal[{{ $tempat }}][{{ $shift }}][{{ $hari }}][id_karyawan]" class="form-control jadwal-select"
+                                            <select name="jadwal[{{ $tempat }}][{{ $shift }}][{{ $hari }}][id_karyawan_baru]" class="form-control jadwal-select"
                                                 data-hari="{{ $hari }}" data-tempat="{{ $tempat }}">
                                                 <option value="">-</option>
                                                 @foreach ($karyawanList as $karyawan)
@@ -88,6 +95,7 @@
                                                     @endif
                                                 @endforeach
                                             </select>
+                                            <input type="hidden" name="jadwal[{{ $tempat }}][{{ $shift }}][{{ $hari }}][id_karyawan_lama]" value="{{ $jadwalHari['id_karyawan'] ?? '' }}">
                                         @endif
 
                                     </td>

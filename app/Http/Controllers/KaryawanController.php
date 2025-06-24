@@ -196,26 +196,36 @@ class KaryawanController extends Controller
     }
 
     public function update(Request $request, $id)
-    {
-        $url = config('api.base_url');
-        $token = session('token'); // Pastikan token dari session
+{
+    $url = config('api.base_url');
+    $token = session('token'); // Pastikan token dari session
 
-        try {
-            $response = $this->client->request('PUT', "{$url}/karyawan/{$id}", [
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $token,
-                    'Accept' => 'application/json',
-                ],
-                'json' => $request->all(),
-            ]);
+    try {
+        $response = $this->client->request('PUT', "{$url}/karyawan/{$id}", [
+            'headers' => [
+                'Authorization' => 'Bearer ' . $token,
+                'Accept' => 'application/json',
+            ],
+            'json' => $request->all(),
+        ]);
 
-            $karyawan = json_decode($response->getBody()->getContents(), true);
+        $karyawan = json_decode($response->getBody()->getContents(), true);
 
-            return redirect()->route('karyawan.index')->with('success', 'Karyawan berhasil diperbarui');
-        } catch (\GuzzleHttp\Exception\RequestException $e) {
-            return back()->with('error', 'Gagal memperbarui karyawan. ' . $e->getMessage());
+        $page = $request->input('page', 1);
+        $from = $request->input('from', 'index'); // default ke index jika tidak ada
+
+        // Redirect sesuai asal form
+        if ($from === 'riwayat') {
+            return redirect()->route('karyawan.riwayat', ['page' => $page])
+                ->with('success', 'Karyawan berhasil diperbarui');
+        } else {
+            return redirect()->route('karyawan.index', ['page' => $page])
+                ->with('success', 'Karyawan berhasil diperbarui');
         }
+    } catch (\GuzzleHttp\Exception\RequestException $e) {
+        return back()->with('error', 'Gagal memperbarui karyawan. ' . $e->getMessage());
     }
+}
 
     public function destroy($id)
     {

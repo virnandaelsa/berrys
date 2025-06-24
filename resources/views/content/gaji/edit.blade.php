@@ -16,6 +16,7 @@
 
             <form method="POST" action="{{ route('penggajian.tambahEditGaji') }}" class="needs-validation" novalidate>
                 @csrf
+                <input type="hidden" name="page" value="{{ request('page', 1) }}">
                 <input type="hidden" name="id_karyawan" value="{{ $karyawan['id'] }}">
                 <input type="hidden" name="bulan" value="{{ $bulan }}">
                 <input type="hidden" name="tahun" value="{{ $tahun }}">
@@ -36,7 +37,7 @@
                     <label for="jumlah" class="form-label"><strong>Jumlah Uang</strong></label>
                     <div class="input-group">
                         <span class="input-group-text">Rp</span>
-                        <input type="number" name="jumlah" id="jumlah" class="form-control" value="{{ old('jumlah') }}" required>
+                        <input type="text" name="jumlah" id="jumlah" class="form-control" value="{{ old('jumlah') }}" required>
                     </div>
                     <div class="invalid-feedback">
                         Jumlah uang harus diisi.
@@ -75,5 +76,21 @@
             }, false)
         })
     })()
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const input = document.getElementById('jumlah');
+    input.addEventListener('input', function(e) {
+        let value = this.value.replace(/\D/g, ''); // Hanya angka
+        if (!value) {
+            this.value = '';
+            return;
+        }
+        this.value = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    });
+
+    // Optional: Agar jika user paste atau load value lama, tetap dalam format
+    input.dispatchEvent(new Event('input'));
+});
 </script>
 @endsection

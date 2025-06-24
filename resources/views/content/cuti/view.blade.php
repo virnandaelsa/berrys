@@ -33,7 +33,7 @@
     </form>
 
     <div class="mt-3">
-        @foreach ($cutiData as $cuti)
+        @foreach ($pagedCuti as $cuti)
         <div class="cuti-card d-flex align-items-center p-3 border rounded mb-2">
             <!-- Checkbox -->
             <input type="checkbox" class="mr-2 checkbox-cuti" data-id="{{ $cuti['id'] }}"
@@ -66,6 +66,7 @@
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="status" value="Ditolak">
+                    <input type="hidden" name="tanggal_mulai" value="{{ \Carbon\Carbon::parse($cuti['tanggal'])->startOfWeek()->format('Y-m-d') }}">
                     <button type="submit" class="btn btn-danger btn-sm"
                         @if($cuti['status'] !== 'Pending') disabled @endif>Tolak</button>
                 </form>
@@ -73,12 +74,14 @@
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="status" value="Diterima">
+                    <input type="hidden" name="tanggal_mulai" value="{{ \Carbon\Carbon::parse($cuti['tanggal'])->startOfWeek()->format('Y-m-d') }}">
                     <button type="submit" class="btn btn-success btn-sm"
                         @if($cuti['status'] !== 'Pending') disabled @endif>Terima</button>
                 </form>
             </div>
         </div>
         @endforeach
+        {{ $pagedCuti->links('pagination::bootstrap-5') }}
     </div>
 </div>
 

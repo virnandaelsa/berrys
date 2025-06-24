@@ -21,7 +21,7 @@
         <tbody>
             @foreach($karyawanTidakAktif as $index => $karyawan)
             <tr>
-                <td>{{ $loop->iteration }}</td>
+                <td>{{ ($karyawanTidakAktif->currentPage() - 1) * $karyawanTidakAktif->perPage() + $loop->iteration }}</td>
                 <td>{{ $karyawan['nama'] }}</td>
                 @php
                     \Carbon\Carbon::setLocale('id');
@@ -46,7 +46,7 @@
             @endforeach
         </tbody>
     </table>
-{{ $karyawanTidakAktif->links('pagination::bootstrap-5') }}
+{{ $karyawanTidakAktif->appends(request()->query())->links('pagination::bootstrap-5') }}
 </div>
 
 <!-- MODAL SHOW KARYAWAN -->
@@ -99,6 +99,16 @@
                             <p id="show_tanggal_masuk" class="text-muted"></p>
                         </div>
                     </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="fw-bold">Username</label>
+                            <p id="show_username" class="text-muted"></p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="fw-bold">No Telepon</label>
+                            <p id="show_no_tlp" class="text-muted"></p>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -121,6 +131,8 @@
                     @csrf
                     @method('PUT')
 
+                    <input type="hidden" name="from" value="riwayat">
+                    <input type="hidden" name="page" value="{{ request('page', 1) }}">
                     <input type="hidden" id="edit_id">
 
                     <div class="mb-3">
@@ -151,6 +163,14 @@
 
                             <input type="radio" id="edit_laki" name="jen_kel" value="L" class="ms-3">
                             <label for="edit_laki">Laki-laki</label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">No Telepon</label>
+                        <input type="text" id="edit_no_tlp" name="no_tlp" class="form-control @error('no_tlp') is-invalid @enderror" value="{{ old('no_tlp', $data->no_tlp ?? '') }}" placeholder="Masukkan No Telepon" required>
+                        <div class="invalid-feedback">
+                            {{ $errors->first('no_tlp') ?? 'Harap masukkan No Telepon.' }}
                         </div>
                     </div>
 
@@ -199,6 +219,7 @@
                 $('#edit_alamat').val(data.alamat);
                 $('#edit_tanggal_lahir').val(data.tanggal_lahir);
                 $('#edit_role').val(data.role);
+                $('#edit_no_tlp').val(data.no_tlp);
                 $('#edit_tanggal_masuk').val(data.tanggal_masuk);
                 $('#edit_status').val(data.status);
 
@@ -226,9 +247,9 @@
                 $('#show_nik').text(data.nik);
                 $('#show_nama').text(data.nama);
                 $('#show_alamat').text(data.alamat);
-                $('#show_tanggal_lahir').text(data.tanggal_lahir);
+                $('#show_tanggal_lahir').text(data.tanggal_lahir_formatted);
                 $('#show_role').text(data.role);
-                $('#show_tanggal_masuk').text(data.tanggal_masuk);
+                $('#show_tanggal_masuk').text(data.tanggal_masuk_formatted);
                 $('#show_status').text(data.status);
 
                 if (data.jen_kel === 'P') {
@@ -236,6 +257,9 @@
                 } else {
                     $('#show_jen_kel').text('Laki-laki');
                 }
+
+                $('#show_username').text(data.username);
+                $('#show_no_tlp').text(data.no_tlp);
 
                 $('#modalShowKaryawan').modal('show');
             },

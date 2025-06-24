@@ -47,7 +47,7 @@
     </form>
 
     <table class="table mt-3 table-bordered text-center">
-    <thead>
+        <thead>
         <tr>
             <th>Tempat</th>
             <th>Shift</th>
@@ -61,19 +61,23 @@
         </tr>
     </thead>
     <tbody>
-        @forelse ($groupedJadwal as $jadwal)
-            <tr>
-                <td>{{ $jadwal['tempat'] }}</td>
-                <td>{{ $jadwal['shift'] }}</td>
-                @foreach (['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'] as $hari)
-                    <td>{{ $jadwal['hari'][$hari] ?? '-' }}</td>
-                @endforeach
-            </tr>
-        @empty
-            <tr>
-                <td colspan="9" class="text-center">Tidak ada jadwal</td>
-            </tr>
-        @endforelse
+        @foreach ($jadwalList as $tempat => $shifts)
+            @foreach ($shifts as $shift)
+                @php
+                    // Cari data yang cocok dari groupedJadwal
+                    $data = collect($groupedJadwal)->first(function($item) use ($tempat, $shift) {
+                        return $item['tempat'] == $tempat && $item['shift'] == $shift;
+                    });
+                @endphp
+                <tr>
+                    <td>{{ $tempat }}</td>
+                    <td>{{ $shift }}</td>
+                    @foreach (['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'] as $hari)
+                        <td>{{ $data['hari'][$hari] ?? '-' }}</td>
+                    @endforeach
+                </tr>
+            @endforeach
+        @endforeach
     </tbody>
 </table>
 </div>

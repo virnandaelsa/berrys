@@ -101,16 +101,44 @@ class PenjualanController extends Controller
             $karyawanData = $this->gabungkanData($jadwal, $laporanDatang, $stokDatang, $laporanPulang, $mapJadwal);
             \Log::info('Data yang dikirim ke view:', ['karyawanData' => $karyawanData]);
 
+            $jadwalList = [
+                'Pahing' => ['1', '2'], // PASTIKAN SEMUA SHIFT STRING
+                'Bandar' => ['Fulltime'],
+                'Balowerti' => ['Fulltime'],
+                'Dlopo' => ['Fulltime'],
+                'Mojoroto' => ['Fulltime'],
+                'Pesantren' => ['Fulltime'],
+                'Ngronggo' => ['Fulltime'],
+            ];
+
+
+            $groupedKaryawanData = [];
+
+            foreach ($jadwalList as $tempat => $shifts) {
+                foreach ($shifts as $shift) {
+                    $filtered = collect($karyawanData)->filter(function ($item) use ($tempat, $shift) {
+                        return is_array($item)
+                            && isset($item['tempat'], $item['shift'])
+                            && $item['tempat'] === $tempat
+                            && (string)$item['shift'] === (string)$shift;
+                    });
+
+                    if ($filtered->isNotEmpty()) {
+                        $groupedKaryawanData[$tempat][$shift] = $filtered->values();
+                    }
+                }
+            }
+
             return view('content.penjualan.laporan', [
                 'tanggal' => $tanggal,
-                'karyawanData' => $karyawanData,
+                'groupedKaryawanData' => $groupedKaryawanData,
             ]);
         } catch (\Exception $e) {
             \Log::error('Gagal memuat data laporan donat: ' . $e->getMessage());
 
             return view('content.penjualan.laporan', [
                 'tanggal' => $tanggal,
-                'karyawanData' => [],
+                'groupedKaryawanData' => [],
                 'error' => 'Gagal memuat data laporan donat.',
             ]);
         }
@@ -124,7 +152,7 @@ class PenjualanController extends Controller
     $gabungan = [];
 
     if (!empty($jadwal)) {
-        // ... INISIALISASI dan MERGE seperti biasa (kode kamu sebelumnya)
+        // Inisialisasi semua jadwal
         foreach ($jadwal as $item) {
             $idJadwal = $item['id'];
             $gabungan[$idJadwal] = [
@@ -150,7 +178,7 @@ class PenjualanController extends Controller
                 ],
             ];
         }
-        // MERGE LAPORAN & STOK seperti biasa...
+        // Merge laporan datang
         foreach ($laporanDatang as $datang) {
             if (!isset($datang['id_jadwal'])) continue;
             $idJadwal = $datang['id_jadwal'];
@@ -161,6 +189,7 @@ class PenjualanController extends Controller
                 'salju' => $datang['donat_salju'] ?? 0,
             ];
         }
+        // Merge stok datang
         foreach ($stokDatang as $stok) {
             if (!isset($stok['id_jadwal'])) continue;
             $idJadwal = $stok['id_jadwal'];
@@ -169,6 +198,7 @@ class PenjualanController extends Controller
             $gabungan[$idJadwal]['stok_datang_total']['bolong'] += $stok['donat_bolong'] ?? 0;
             $gabungan[$idJadwal]['stok_datang_total']['salju'] += $stok['donat_salju'] ?? 0;
         }
+        // Merge laporan pulang
         foreach ($laporanPulang as $pulang) {
             if (!isset($pulang['id_jadwal'])) continue;
             $idJadwal = $pulang['id_jadwal'];
@@ -180,7 +210,7 @@ class PenjualanController extends Controller
             ];
         }
     } else {
-        // Untuk kasus jadwal kosong tetap gunakan mapping
+        // Jika jadwal kosong, gunakan mapping dari data lain
         foreach ($laporanDatang as $datang) {
             if (!isset($datang['id_jadwal'])) continue;
             $idJadwal = $datang['id_jadwal'];
@@ -255,23 +285,20 @@ class PenjualanController extends Controller
         }
     }
 
-    // === FILTER HANYA YANG SUDAH INPUT LAPORAN ===
+    // === FILTER: Hanya tampilkan yang sudah isi laporan datang ===
     $filtered = array_filter($gabungan, function ($item) {
         $datang = $item['laporan_datang'];
-        $pulang = $item['laporan_pulang'];
-        // Jika laporan datang ada isinya (salah satu > 0) ATAU laporan pulang ada isinya (salah satu > 0)
+        // Tampil jika salah satu > 0
         return (
             ($datang['bombo'] ?? 0) > 0 ||
             ($datang['bolong'] ?? 0) > 0 ||
-            ($datang['salju'] ?? 0) > 0 ||
-            ($pulang['bombo'] ?? 0) > 0 ||
-            ($pulang['bolong'] ?? 0) > 0 ||
-            ($pulang['salju'] ?? 0) > 0
+            ($datang['salju'] ?? 0) > 0
         );
     });
 
     return array_values($filtered);
 }
+
     private function inisialisasiJadwal($jadwal, $idJadwal)
     {
         foreach ($jadwal as $item) {

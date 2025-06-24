@@ -108,7 +108,7 @@ class AbsensiController extends Controller
             $groupedCollection->count(),
             $perPage,
             $currentPage,
-            ['path' => $request->url(), 'query' => $request->query()]
+            ['path' => request()->url(), 'query' => request()->query()]
         );
 
         // Kirim ke view

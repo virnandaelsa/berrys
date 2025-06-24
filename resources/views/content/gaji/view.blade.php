@@ -84,5 +84,6 @@
         @endif
     </tbody>
 </table>
+ {{ $rekapGaji->links('pagination::bootstrap-5') }}
 </div>
 @endsection

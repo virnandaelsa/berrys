@@ -36,12 +36,14 @@
                         @endphp
                         @foreach ($shifts as $index => $shift)
                             <tr>
-                                <!-- Merge baris tempat -->
                                 @if ($index === 0)
                                     <td rowspan="{{ $rowspan }}">{{ $tempat }}</td>
                                 @endif
                                 <td>{{ $shift }}</td>
                                 @foreach (['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'] as $hari)
+                                    @php
+                                        $tanggal_hari_ini = $tanggalPerHari[$hari];
+                                    @endphp
                                     <td>
                                         <!-- Hidden input untuk mengirim data tempat, shift, dan hari -->
                                         <input type="hidden" name="jadwal[{{ $tempat }}][{{ $shift }}][{{ $hari }}][tempat]" value="{{ $tempat }}">
@@ -54,29 +56,47 @@
                                                 <option value="" selected>-</option>
                                                 @foreach ($karyawanList as $karyawan)
                                                     @if ($karyawan['role'] === 'Produksi')
-                                                        <option value="{{ $karyawan['id'] }}">{{ $karyawan['nama'] }}</option>
+                                                        @php
+                                                            $cutiTanggal = $cutiByKaryawan[$karyawan['id']] ?? [];
+                                                            $sedangCuti = in_array($tanggal_hari_ini, $cutiTanggal);
+                                                        @endphp
+                                                        @if (!$sedangCuti)
+                                                            <option value="{{ $karyawan['id'] }}">{{ $karyawan['nama'] }}</option>
+                                                        @endif
                                                     @endif
                                                 @endforeach
                                             </select>
                                         @elseif ($tempat === 'Kurir')
                                             <!-- Dropdown single untuk Kurir, hanya tampilkan karyawan role 'kurir' -->
                                             <select name="jadwal[{{ $tempat }}][{{ $shift }}][{{ $hari }}][id_karyawan]" class="form-control jadwal-select"
-                                                data-hari="{{ $hari }}"data-tempat="{{ $tempat }}">
+                                                data-hari="{{ $hari }}" data-tempat="{{ $tempat }}">
                                                 <option value="" selected>-</option>
                                                 @foreach ($karyawanList as $karyawan)
                                                     @if ($karyawan['role'] === 'Kurir')
-                                                        <option value="{{ $karyawan['id'] }}">{{ $karyawan['nama'] }}</option>
+                                                        @php
+                                                            $cutiTanggal = $cutiByKaryawan[$karyawan['id']] ?? [];
+                                                            $sedangCuti = in_array($tanggal_hari_ini, $cutiTanggal);
+                                                        @endphp
+                                                        @if (!$sedangCuti)
+                                                            <option value="{{ $karyawan['id'] }}">{{ $karyawan['nama'] }}</option>
+                                                        @endif
                                                     @endif
                                                 @endforeach
                                             </select>
                                         @else
-                                            <!-- Tempat lainnya, tampilkan semua -->
+                                            <!-- Tempat lainnya, tampilkan semua selain produksi & kurir -->
                                             <select name="jadwal[{{ $tempat }}][{{ $shift }}][{{ $hari }}][id_karyawan]" class="form-control jadwal-select"
                                                 data-hari="{{ $hari }}" data-tempat="{{ $tempat }}">
                                                 <option value="" selected>-</option>
                                                 @foreach ($karyawanList as $karyawan)
                                                     @if ($karyawan['role'] !== 'Produksi' && $karyawan['role'] !== 'Kurir')
-                                                        <option value="{{ $karyawan['id'] }}">{{ $karyawan['nama'] }}</option>
+                                                        @php
+                                                            $cutiTanggal = $cutiByKaryawan[$karyawan['id']] ?? [];
+                                                            $sedangCuti = in_array($tanggal_hari_ini, $cutiTanggal);
+                                                        @endphp
+                                                        @if (!$sedangCuti)
+                                                            <option value="{{ $karyawan['id'] }}">{{ $karyawan['nama'] }}</option>
+                                                        @endif
                                                     @endif
                                                 @endforeach
                                             </select>
@@ -171,5 +191,4 @@ document.querySelectorAll(".jadwal-select").forEach(function(selectEl) {
     });
 });
 </script>
-
 @endsection

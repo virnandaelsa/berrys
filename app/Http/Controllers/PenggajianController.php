@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class PenggajianController extends Controller
 {
@@ -41,9 +42,24 @@ class PenggajianController extends Controller
 
         $rekapGaji = json_decode($response->getBody()->getContents(), true);
 
-        \Log::info('Respons API:', $rekapGaji);
+       $data = $rekapGaji['data'] ?? $rekapGaji ?? [];
 
-        return view('content.gaji.view', compact('rekapGaji', 'bulan', 'tahun'));
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $perPage = 10;
+
+        $paginated = new LengthAwarePaginator(
+            collect($data)->slice(($currentPage - 1) * $perPage, $perPage)->values(),
+            count($data),
+            $perPage,
+            $currentPage,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+
+        return view('content.gaji.view', [
+            'rekapGaji' => $paginated,
+            'bulan' => $bulan,
+            'tahun' => $tahun,
+        ]);
     } catch (\Exception $e) {
         \Log::error('Gagal memuat data penggajian: ' . $e->getMessage());
         return redirect()->back()->with('error', 'Gagal memuat data.');
@@ -207,8 +223,9 @@ class PenggajianController extends Controller
 
     $id_karyawan = $request->input('id_karyawan');
     $jenis = $request->input('jenis');
-    $jumlah = $request->input('jumlah');
     $keterangan = $request->input('keterangan');
+    $jumlah = $request->input('jumlah');
+    $jumlah = (int) str_replace('.', '', $jumlah);
 
     $url = config('api.base_url');
     $token = session('token'); // Ambil token dari session
@@ -245,7 +262,16 @@ class PenggajianController extends Controller
 
         if ($response->getStatusCode() === 200) {
             \Log::info("Data berhasil diperbarui untuk karyawan ID: {$id_karyawan}");
-            return redirect()->route('penggajian.index')->with('success', 'Data berhasil diperbarui.');
+            // Ambil parameter filter dan page dari request
+            $bulan = $request->input('bulan');
+            $tahun = $request->input('tahun');
+            $page = $request->input('page', 1);
+
+            return redirect()->route('penggajian.index', [
+                'bulan' => $bulan,
+                'tahun' => $tahun,
+                'page' => $page
+            ])->with('success', 'Data berhasil diperbarui.');
         } else {
             throw new \Exception('Terjadi kesalahan saat memperbarui data.');
         }

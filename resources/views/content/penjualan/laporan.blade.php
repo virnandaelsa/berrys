@@ -5,7 +5,7 @@
 @section('content')
 <div class="container">
     <div class="container mx-auto p-6">
-        <h2 class="text-3xl font-bold mb-6 text-gray-800">📊 Laporan Donat</h2>
+        <h2 class="text-3xl font-bold mb-6 text-gray-800">📊 Laporan Stok Donat</h2>
 
         <!-- Filter Tanggal -->
         <form method="GET" action="{{ route('laporan.donat') }}">
@@ -48,40 +48,43 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse ($karyawanData as $item)
-                        <tr>
-                            <td>{{ $item['nama_karyawan'] }}</td>
-                            <td>{{ $item['shift'] }}</td>
-                            <td>{{ $item['tempat'] }}</td>
-                            <td>
-                                <div class="text-sm">
-                                    <strong>Bombo:</strong> {{ $item['laporan_datang']['bombo'] }}<br>
-                                    <strong>Bolong:</strong> {{ $item['laporan_datang']['bolong'] }}<br>
-                                    <strong>Salju:</strong> {{ $item['laporan_datang']['salju'] }}
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 border">
-                                <div class="text-sm">
-                                    <strong>Bombo:</strong> {{ $item['stok_datang_total']['bombo'] }}<br>
-                                    <strong>Bolong:</strong> {{ $item['stok_datang_total']['bolong'] }}<br>
-                                    <strong>Salju:</strong> {{ $item['stok_datang_total']['salju'] }}
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 border">
-                                <div class="text-sm">
-                                    <strong>Bombo:</strong> {{ $item['laporan_pulang']['bombo'] }}<br>
-                                    <strong>Bolong:</strong> {{ $item['laporan_pulang']['bolong'] }}<br>
-                                    <strong>Salju:</strong> {{ $item['laporan_pulang']['salju'] }}
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 border">
-                                <a
-                                    href="{{ route('laporan.donat.detail', ['id_jadwal' => $item['id_jadwal'], 'tanggal' => $tanggal]) }}"
-                                    class="btn btn-primary">
-                                    Detail
-                                </a>
-                            </td>
-                        </tr>
+                    @forelse($groupedKaryawanData as $tempat => $shifts)
+                        @foreach($shifts as $shift => $karyawanList)
+                            @foreach($karyawanList as $item)
+                                <tr>
+                                    <td>{{ $item['nama_karyawan'] ?? 'Unknown' }}</td>
+                                    <td>{{ $item['shift'] }}</td>
+                                    <td>{{ $item['tempat'] }}</td>
+                                    <td>
+                                        <div class="text-sm">
+                                            <strong>Bombo:</strong> {{ $item['laporan_datang']['bombo'] }}<br>
+                                            <strong>Bolong:</strong> {{ $item['laporan_datang']['bolong'] }}<br>
+                                            <strong>Salju:</strong> {{ $item['laporan_datang']['salju'] }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="text-sm">
+                                            <strong>Bombo:</strong> {{ $item['stok_datang_total']['bombo'] }}<br>
+                                            <strong>Bolong:</strong> {{ $item['stok_datang_total']['bolong'] }}<br>
+                                            <strong>Salju:</strong> {{ $item['stok_datang_total']['salju'] }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="text-sm">
+                                            <strong>Bombo:</strong> {{ $item['laporan_pulang']['bombo'] }}<br>
+                                            <strong>Bolong:</strong> {{ $item['laporan_pulang']['bolong'] }}<br>
+                                            <strong>Salju:</strong> {{ $item['laporan_pulang']['salju'] }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <a href="{{ route('laporan.donat.detail', ['id_jadwal' => $item['id_jadwal'], 'tanggal' => $tanggal]) }}"
+                                        class="btn btn-primary">
+                                            Detail
+                                        </a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        @endforeach
                     @empty
                         <tr>
                             <td colspan="7" class="text-center text-gray-500 py-6">
@@ -89,7 +92,7 @@
                             </td>
                         </tr>
                     @endforelse
-                </tbody>
+                    </tbody>
             </table>
         </div>
 </div>

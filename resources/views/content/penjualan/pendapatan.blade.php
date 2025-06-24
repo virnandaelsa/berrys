@@ -62,7 +62,7 @@
                                 <td style="text-align: right; white-space: nowrap; color: {{ $selisih === 0 ? '#6c757d' : '#dc3545' }};">
                                     Rp {{ number_format($selisih, 0, ',', '.') }}
                                 </td>
-                                <td>{{ $item['catatan'] ?? '-' }}</td>
+                                <td>{{ $item['laporan_catatan'] ?? '-' }}</td>
                             </tr>
                         @endforeach
                     </tbody>

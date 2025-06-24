@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Validator;
 
 class JadwalController extends Controller
 {
@@ -56,6 +57,18 @@ class JadwalController extends Controller
 
         // Log data yang valid setelah difilter
         \Log::info('Data valid setelah difilter:', $validJadwalData->toArray());
+        $jadwalList = [
+        'Pahing' => [1, 2],
+        'Bandar' => ['Fulltime'],
+        'Balowerti' => ['Fulltime'],
+        'Dlopo' => ['Fulltime'],
+        'Mojoroto' => ['Fulltime'],
+        'Toko' => ['Fulltime'],
+        'Pesantren' => ['Fulltime'],
+        'Ngronggo' => ['Fulltime'],
+        'Kurir' => [1, 2],
+        'Produksi' => ['Fulltime'],
+    ];
 
         $groupedJadwal = $validJadwalData
             ->groupBy(['tempat', 'shift'])
@@ -95,6 +108,7 @@ class JadwalController extends Controller
                         ]);
                     }
 
+
                     return [
                         'tempat' => $tempat,
                         'shift' => $shift,
@@ -114,7 +128,7 @@ class JadwalController extends Controller
         $groupedJadwal = [];
     }
 
-    return view('content.jadwal.view', compact('groupedJadwal', 'tanggal_mulai', 'tanggal_akhir'));
+    return view('content.jadwal.view', compact('groupedJadwal', 'tanggal_mulai', 'tanggal_akhir', 'jadwalList'));
 }
 
     public function create()
@@ -131,13 +145,19 @@ class JadwalController extends Controller
     // Tanggal akhir otomatis menjadi Minggu setelahnya
     $tanggal_akhir = $tanggal_mulai->copy()->addDays(6);
 
+    // Tanggal per hari
+    $hariList = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+    $tanggalPerHari = [];
+    foreach ($hariList as $idx => $hari) {
+        $tanggalPerHari[$hari] = $tanggal_mulai->copy()->addDays($idx)->toDateString();
+    }
+
     // Daftar tempat statis
     $jadwalList = [
         'Pahing' => [1, 2],
         'Bandar' => ['Fulltime'],
         'Balowerti' => ['Fulltime'],
         'Dlopo' => ['Fulltime'],
-        'Kaliombo' => ['Fulltime'],
         'Mojoroto' => ['Fulltime'],
         'Toko' => ['Fulltime'],
         'Pesantren' => ['Fulltime'],
@@ -151,7 +171,7 @@ class JadwalController extends Controller
         $response = $this->client->request('GET', "{$url}/karyawan", [
             'headers' => [
                 'Accept' => 'application/json',
-                'Authorization' => 'Bearer ' . $token, // Tambahkan header Authorization
+                'Authorization' => 'Bearer ' . $token,
             ],
         ]);
         $data = json_decode($response->getBody()->getContents(), true);
@@ -161,14 +181,45 @@ class JadwalController extends Controller
             return $karyawan['status'] === 'Aktif';
         })->values()->toArray();
 
-        \Log::info("Karyawan Aktif: " . json_encode($karyawanList));
-
+        $cutiByKaryawan = [];
     } catch (\Exception $e) {
-        \Log::error("Gagal mengambil data karyawan: " . $e->getMessage());
         $karyawanList = [];
     }
 
-    return view('content.jadwal.create', compact('jadwalList', 'karyawanList', 'tanggal_mulai', 'tanggal_akhir'));
+    try {
+        $cutiResponse = $this->client->request('GET', "{$url}/cuti", [
+            'headers' => [
+                'Authorization' => 'Bearer ' . $token,
+                'Accept' => 'application/json',
+            ],
+            'query' => [
+                'tanggal_mulai' => $tanggal_mulai->toDateString(),
+                'tanggal_akhir' => $tanggal_akhir->toDateString(),
+            ]
+        ]);
+
+        $cutiData = json_decode($cutiResponse->getBody()->getContents(), true)['data'] ?? [];
+
+        foreach ($cutiData as $cuti) {
+            if (trim($cuti['status']) === 'diterima') {
+                $id = $cuti['id_karyawan'];
+                $tanggal = date('Y-m-d', strtotime($cuti['tanggal_cuti']));
+                $cutiByKaryawan[$id][] = $tanggal;
+            }
+        }
+
+    } catch (\Exception $e) {
+        $cutiByKaryawan = [];
+    }
+
+    return view('content.jadwal.create', compact(
+        'jadwalList',
+        'karyawanList',
+        'tanggal_mulai',
+        'tanggal_akhir',
+        'cutiByKaryawan',
+        'tanggalPerHari'
+    ));
 }
 
     public function store(Request $request)
@@ -291,7 +342,6 @@ class JadwalController extends Controller
         'Bandar' => ['Fulltime'],
         'Balowerti' => ['Fulltime'],
         'Dlopo' => ['Fulltime'],
-        'Kaliombo' => ['Fulltime'],
         'Mojoroto' => ['Fulltime'],
         'Toko' => ['Fulltime'],
         'Pesantren' => ['Fulltime'],
@@ -307,80 +357,111 @@ class JadwalController extends Controller
 
 public function update(Request $request)
 {
-    $url = config('api.base_url');
-    $token = session('token'); // Ambil token dari session
-    \Log::info("Memulai fungsi update dengan URL: {$url}");
+    \Log::info("Mulai proses update jadwal.");
 
-    // Ambil tanggal awal dan akhir dari request (atau default ke minggu ini)
-    $tanggalMulai = Carbon::parse($request->tanggal_mulai)->startOfWeek(Carbon::MONDAY);
-    $tanggalAkhir = $tanggalMulai->copy()->addDays(6);
+    $validator = Validator::make($request->all(), [
+        'tanggal_mulai' => 'required|date',
+        'jadwal' => 'required|array',
+    ]);
+    if ($validator->fails()) {
+        return back()->withErrors($validator)->withInput();
+    }
 
-    \Log::info("Tanggal mulai: {$tanggalMulai->toDateString()}");
-    \Log::info("Tanggal akhir: {$tanggalAkhir->toDateString()}");
-
-    // Persiapkan data jadwal yang akan dikirim ke API
-    $jadwalData = [];
-
-    // Daftar hari dalam satu minggu
+    $tanggalMulai = \Carbon\Carbon::parse($request->tanggal_mulai)->startOfWeek(\Carbon\Carbon::MONDAY);
     $daftarHari = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
 
-    // Cek jika jadwal ada dalam request, jika tidak ada tetap lanjut
-    if (!empty($request->jadwal)) {
-        \Log::info("Memproses data jadwal...");
+    // Kumpulkan data perubahan untuk dikirim ke API
+    $perubahanJadwal = [];
 
-        foreach ($request->jadwal as $tempat => $shifts) {
-            foreach ($shifts as $shift => $hariList) {
-                foreach ($hariList as $hari => $data) {
-                    if (!empty($data['id_karyawan'])) {
-                        // Cari indeks hari dalam daftar
-                        $hariIndex = array_search($hari, $daftarHari);
+    foreach ($request->jadwal as $tempat => $shifts) {
+    foreach ($shifts as $shift => $hariList) {
+        foreach ($hariList as $hari => $data) {
+            $hariIndex = array_search($hari, $daftarHari);
+            if ($hariIndex === false) continue;
+            $tanggalJadwal = $tanggalMulai->copy()->addDays($hariIndex)->toDateString();
 
-                        if ($hariIndex === false) {
-                            \Log::error("Hari '{$hari}' tidak valid.");
-                            return back()->with('error', "Hari '{$hari}' tidak valid.");
-                        }
+            // PRODUKSI: delete & insert
+            if ($tempat === 'Produksi' && isset($data['id_karyawan_lama']) && is_array($data['id_karyawan_lama'])) {
+                $lamaArr = array_filter($data['id_karyawan_lama']);
+                $baruArr = array_filter($data['id_karyawan_baru'] ?? []);
 
-                        // Hitung tanggal berdasarkan tanggal_mulai
-                        $tanggalJadwal = $tanggalMulai->copy()->addDays($hariIndex)->toDateString();
-
-                        // Simpan data jadwal yang valid
-                        $jadwalData[] = [
+                foreach ($lamaArr as $idLama) {
+                    if (!in_array($idLama, $baruArr)) {
+                        $perubahanJadwal[] = [
+                            'action' => 'delete',
                             'tempat' => $tempat,
-                            'shift' => (string) $shift,
+                            'shift' => (string)$shift,
                             'hari' => $hari,
                             'date' => $tanggalJadwal,
-                            'id_karyawan' => $data['id_karyawan'],
+                            'id_karyawan' => $idLama,
+                        ];
+                    }
+                }
+                foreach ($baruArr as $idBaru) {
+                    if (!in_array($idBaru, $lamaArr)) {
+                        $perubahanJadwal[] = [
+                            'action' => 'insert',
+                            'tempat' => $tempat,
+                            'shift' => (string)$shift,
+                            'hari' => $hari,
+                            'date' => $tanggalJadwal,
+                            'id_karyawan' => $idBaru,
                         ];
                     }
                 }
             }
+            // KURIR/LAINNYA: update (single)
+            elseif (isset($data['id_karyawan_lama'])) {
+                $idLama = $data['id_karyawan_lama'];
+                $idBaru = $data['id_karyawan_baru'] ?? null;
+                if ($idBaru && $idBaru != $idLama) {
+                    $perubahanJadwal[] = [
+                        'action' => 'update',
+                        'tempat' => $tempat,
+                        'shift' => (string)$shift,
+                        'hari' => $hari,
+                        'date' => $tanggalJadwal,
+                        'id_karyawan_lama' => $idLama,
+                        'id_karyawan_baru' => $idBaru,
+                    ];
+                }
+            }
         }
-
-        \Log::info("Data jadwal yang akan dikirim: " . json_encode($jadwalData));
-    } else {
-        // Jika tidak ada jadwal, beri pesan atau log data yang kosong
-        \Log::info('Tidak ada data jadwal yang diubah atau ditambahkan.');
     }
+}
 
-    // Kirim data ke API
+    \Log::info("Data perubahan jadwal yang akan dikirim ke API: " . json_encode($perubahanJadwal));
+
+    // Kirim ke API (misal pakai Guzzle)
     try {
-        $this->client->request('PUT', "{$url}/jadwal", [
-                'headers' => [
-                    'Accept' => 'application/json',
-                    'Authorization' => 'Bearer ' . $token, // Tambahkan header Authorization
-                ],
+        $client = new \GuzzleHttp\Client();
+        $url = config('api.base_url') . '/jadwal/update'; // pastikan sesuai endpoint API kamu
+        $token = session('token');
+
+        $response = $client->request('PUT', $url, [
+            'headers' => [
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer ' . $token,
+            ],
             'json' => [
                 'tanggal_mulai' => $tanggalMulai->toDateString(),
-                'tanggal_akhir' => $tanggalAkhir->toDateString(),
-                'jadwal' => $jadwalData, // Kirim data meskipun kosong
+                'jadwal' => $perubahanJadwal,
             ],
         ]);
 
-        \Log::info("Jadwal berhasil diperbarui.");
-        return redirect()->route('jadwal.index')->with('success', 'Jadwal berhasil diperbarui');
+        $status = $response->getStatusCode();
+        $body = json_decode($response->getBody(), true);
+
+        \Log::info("Respon API update jadwal: " . json_encode($body));
+
+        if ($status == 200) {
+            return redirect()->route('jadwal.index')->with('success', $body['message'] ?? 'Jadwal berhasil diupdate melalui API.');
+        } else {
+            return back()->with('error', 'Gagal update jadwal via API.');
+        }
     } catch (\Exception $e) {
-        \Log::error("Gagal memperbarui jadwal: " . $e->getMessage());
-        return back()->with('error', 'Gagal memperbarui jadwal: ' . $e->getMessage());
+        \Log::error("Gagal update jadwal via API: " . $e->getMessage());
+        return back()->with('error', 'Gagal update jadwal via API: ' . $e->getMessage());
     }
 }
 
